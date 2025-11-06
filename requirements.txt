@@ -1,0 +1,10 @@
+customtkinter>=5.2.0
+pandas
+matplotlib
+openpyxl
+reportlab
+streamlit
+Flask
+Flask-Login
+Flask-WTF
+email-validator
