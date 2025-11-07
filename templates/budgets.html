@@ -5,34 +5,34 @@
 <div class="card">
     <div class="card-body">
         <div class="row align-items-center mb-4">
-            <div class="col-12 col-md-5 d-flex align-items-center gap-2">
-                <h5 class="card-title mb-0">Definir Orçamentos para {{ current_month_str }}</h5>
-                <button type="button" class="btn btn-primary ms-3" data-bs-toggle="modal" data-bs-target="#addBudgetModal">
+            <div class="col-12 col-md-5 d-flex flex-column flex-md-row align-items-stretch align-items-md-center gap-2">
+                <h5 class="card-title mb-0 text-center text-md-start">Definir Orçamentos para {{ current_month_str }}</h5>
+                
+                <button type="button" class="btn btn-primary mt-3 mt-md-0 ms-md-3" data-bs-toggle="modal" data-bs-target="#addBudgetModal">
                     <i class="bi bi-plus-circle"></i> Adicionar novo orçamento
                 </button>
             </div>
 
             <div class="col-12 col-md-7 d-flex justify-content-md-end mt-3 mt-md-0">
-                <form method="get" class="d-flex gap-2 align-items-center">
+                <form method="get" class="d-flex flex-column flex-md-row gap-2 align-items-stretch align-items-md-center">
                     <div class="btn-group">
                         <button type="button" id="prevBudgetMonth" class="btn btn-outline-secondary" title="Mês Anterior">
                             <i class="bi bi-chevron-left"></i>
                         </button>
-                        <input type="month" name="month" id="budgetMonthInput" value="{{ current_month }}" class="form-control" style="width:170px;">
+                        <input type="month" name="month" id="budgetMonthInput" value="{{ current_month }}" class="form-control">
                         <button type="button" id="nextBudgetMonth" class="btn btn-outline-secondary" title="Próximo Mês">
                             <i class="bi bi-chevron-right"></i>
                         </button>
                     </div>
-                    <button type="submit" class="btn btn-secondary">
-                        <i class="bi bi-calendar3"></i> Carregar
+                    <button type="submit" class="btn btn-secondary" title="Carregar">
+                        <i class="bi bi-calendar3"></i><span class="ms-1">Carregar</span>
                     </button>
                 </form>
             </div>
         </div>
-
         <style>
-            /* Limita a lista de orçamentos para evitar empurrar o layout e permitir rolagem */
-            .budget-list-wrapper { max-height: 62vh; overflow: auto; padding-right: 6px; }
+            /* Rolagem interna removida. A lista agora expande com a página. */
+            
             /* Garante espaço entre o progress e o botão */
             .delete-budget-btn { min-width: 36px; }
         </style>
@@ -42,7 +42,7 @@
 
             <div class="budget-list-wrapper">
                 {% for item in budget_data %}
-                <div class="row g-3 align-items-center mb-3">
+                <div class="row g-3 align-items-center budget-item-row">
                     <div class="col-md-3">
                         <label class="form-label"><strong>{{ item.category_name }}</strong></label>
                     </div>

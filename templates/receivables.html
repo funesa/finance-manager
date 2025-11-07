@@ -66,7 +66,7 @@
       <h6 class="card-subtitle mb-3">Recorrentes Pendentes ({{ target_month_display }})</h6>
       {% if pending_recurring %}
       <div class="table-responsive mb-4">
-        <table class="table table-hover align-middle">
+        <table class="table table-hover align-middle table-mobile-cards">
           <thead>
             <tr>
               <th>Nome</th>
@@ -79,12 +79,12 @@
           <tbody>
             {% for rule in pending_recurring %}
             <tr>
-              <td>{{ rule.debtor_name }}</td>
-              <td>{{ rule.description or '—' }}</td>
-              <td>Dia {{ rule.day_of_month }}</td>
-              <td class="text-danger">R$ {{ '{:,.2f}'.format(rule.amount).replace(',','.') }}</td>
-              <td class="text-end">
-                <form action="{{ url_for('receivables.pay_recurring', recurring_id=rule.id) }}" method="POST" class="d-inline">
+              <td data-label="Nome">{{ rule.debtor_name }}</td>
+              <td data-label="Descrição">{{ rule.description or '—' }}</td>
+              <td data-label="Dia Venc.">Dia {{ rule.day_of_month }}</td>
+              <td data-label="Valor" class="text-danger">R$ {{ '{:,.2f}'.format(rule.amount).replace(',','.') }}</td>
+              <td data-label="Ações">
+                <form action="{{ url_for('receivables.pay_recurring', recurring_id=rule.id) }}" method="POST" class="d-inline justify-content-end d-flex">
                   <button type="submit" class="btn btn-success" title="Marcar como Pago (Este Mês)">
                     <i class="bi bi-check-lg me-1"></i> Recebido
                   </button>
@@ -98,13 +98,12 @@
       {% else %}
       <p class="text-muted small mt-2">Nenhuma cobrança recorrente pendente para {{ target_month_display }}.</p>
       {% endif %}
-
       <hr>
 
       <h6 class="card-subtitle my-3">Avulsas / Parceladas Pendentes (Geral)</h6>
       {% if pending_manual_receivables %}
       <div class="table-responsive">
-        <table class="table table-hover align-middle">
+        <table class="table table-hover align-middle table-mobile-cards">
           <thead>
             <tr>
               <th>Nome</th>
@@ -117,28 +116,30 @@
           <tbody>
             {% for id, name, desc, amount, date, status in pending_manual_receivables %}
             <tr>
-              <td>{{ name }}</td>
-              <td>{{ desc or '—' }}</td>
-              <td>{{ date }}</td>
-              <td class="text-danger">R$ {{ '{:,.2f}'.format(amount).replace(',','.') }}</td>
-              <td class="text-end d-flex gap-1 justify-content-end">
-                <form action="{{ url_for('receivables.mark_manual_paid', receivable_id=id) }}" method="POST" class="d-inline">
-                  <button type="submit" class="btn btn-success" title="Marcar como Pago">
-                    <i class="bi bi-check-lg"></i>
+              <td data-label="Nome">{{ name }}</td>
+              <td data-label="Descrição">{{ desc or '—' }}</td>
+              <td data-label="Data">{{ date }}</td>
+              <td data-label="Valor" class="text-danger">R$ {{ '{:,.2f}'.format(amount).replace(',','.') }}</td>
+              <td data-label="Ações">
+                <div class="d-flex gap-1 justify-content-end">
+                  <form action="{{ url_for('receivables.mark_manual_paid', receivable_id=id) }}" method="POST" class="d-inline">
+                    <button type="submit" class="btn btn-success" title="Marcar como Pago">
+                      <i class="bi bi-check-lg"></i>
+                    </button>
+                  </form>
+                  <button class="btn btn-info" 
+                          data-bs-toggle="modal" 
+                          data-bs-target="#editReceivableModal" 
+                          onclick="loadReceivableData({{ id }})"
+                          title="Editar">
+                    <i class="bi bi-pencil-fill"></i>
                   </button>
-                </form>
-                <button class="btn btn-info" 
-                        data-bs-toggle="modal" 
-                        data-bs-target="#editReceivableModal" 
-                        onclick="loadReceivableData({{ id }})"
-                        title="Editar">
-                  <i class="bi bi-pencil-fill"></i>
-                </button>
-                <form action="{{ url_for('receivables.delete_manual', receivable_id=id) }}" method="POST" class="d-inline">
-                  <button type="submit" class="btn btn-danger" title="Apagar" onclick="return confirm('Tem certeza que deseja apagar?');">
-                    <i class="bi bi-trash-fill"></i>
-                  </button>
-                </form>
+                  <form action="{{ url_for('receivables.delete_manual', receivable_id=id) }}" method="POST" class="d-inline">
+                    <button type="submit" class="btn btn-danger" title="Apagar" onclick="return confirm('Tem certeza que deseja apagar?');">
+                      <i class="bi bi-trash-fill"></i>
+                    </button>
+                  </form>
+                </div>
               </td>
             </tr>
             {% endfor %}

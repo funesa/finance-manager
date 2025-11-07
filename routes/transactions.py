@@ -1,7 +1,8 @@
 # src/web/routes/transactions.py
 import json
 from flask import (
-    Blueprint, render_template, request, redirect, url_for, send_file, flash, json
+    Blueprint, render_template, request, redirect, url_for, send_file, flash, json,
+    session, jsonify  # <-- ADICIONADO 'session' E 'jsonify'
 )
 from flask_login import login_required, current_user
 from datetime import datetime, timezone
@@ -76,11 +77,8 @@ def index():
                            date_to=date_to_form,
                            active_page="transactions",
                            today=datetime.now(timezone.utc).strftime('%Y-%m-%d'),
-                           # --- CORREÇÃO AQUI ---
                            datetime=datetime
                            )
-
-# ... (restante do arquivo 'transactions.py' permanece o mesmo) ...
 
 @transactions_bp.route("/add", methods=["POST"])
 @login_required
@@ -201,6 +199,26 @@ def edit_transaction(trans_id):
     except Exception as e:
         flash(f'Erro ao editar transação: {e}', 'danger')
     return redirect(url_for('.index'))
+
+
+# --- ROTA PARA O AVISO BETA ---
+@transactions_bp.route("/api/accept_warning", methods=["POST"])
+@login_required
+def accept_warning():
+    """Define na sessão que o usuário está ciente do aviso."""
+    session['is_aware'] = True
+    return jsonify({"status": "ok"}), 200
+
+
+# --- ROTA ADICIONADA PARA O TUTORIAL ---
+@transactions_bp.route("/api/finish_tutorial", methods=["POST"])
+@login_required
+def finish_tutorial():
+    """Marca na sessão que o usuário já viu o tutorial."""
+    session['has_seen_tutorial'] = True
+    return jsonify({"status": "ok"}), 200
+# --- FIM DA ROTA ADICIONADA ---
+
 
 # Função que o __init__.py irá chamar
 def configure_transactions(app):

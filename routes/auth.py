@@ -2,7 +2,8 @@
 from flask import (
     Blueprint, render_template, request, redirect, url_for, flash, current_app
 )
-from flask_login import login_user, logout_user, current_user
+# --- ATUALIZADO ---
+from flask_login import login_user, logout_user, current_user, login_required
 from itsdangerous import URLSafeTimedSerializer
 from datetime import datetime
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -10,11 +11,13 @@ from werkzeug.security import check_password_hash, generate_password_hash
 import database as db
 # --- CORREÇÃO AQUI ---
 # Trocado de 'from forms import' para 'from web.forms import'
+# --- ATUALIZADO ---
 from web.forms import (
     LoginForm,
     RegistrationForm,
     RequestResetForm,
-    ResetPasswordForm
+    ResetPasswordForm,
+    ChangePasswordForm  # <-- 1. IMPORT ADICIONADO
 )
 
 # Crie o Blueprint
@@ -120,11 +123,33 @@ def reset_token(token):
     form = ResetPasswordForm()
     if form.validate_on_submit():
         db.update_user_password(user.id, form.password.data)
-        flash('Sua senha foi atualizada! Você já pode fazer login.', 'success')
+        flash('Sua senha foi atualizada! Você jÃ¡ pode fazer login.', 'success')
         return redirect(url_for('.login'))
     return render_template('reset_token.html', 
                            title='Resetar Senha', 
                            form=form,
+                           datetime=datetime)
+
+
+# --- 2. NOVA ROTA ADICIONADA AQUI ---
+@auth_bp.route("/change_password", methods=['GET', 'POST'])
+@login_required # Essencial: só usuários logados podem acessar
+def change_password():
+    form = ChangePasswordForm()
+    if form.validate_on_submit():
+        # 1. Verificar se a senha atual está correta
+        if current_user.verify_password(form.current_password.data):
+            # 2. Atualizar a senha no banco
+            db.update_user_password(current_user.id, form.password.data)
+            flash('Sua senha foi alterada com sucesso!', 'success')
+            return redirect(url_for('.change_password'))
+        else:
+            flash('Senha atual incorreta.', 'danger')
+    
+    return render_template('change_password.html',
+                           title='Mudar Senha',
+                           form=form,
+                           active_page="change_password", # Para destacar o link no menu
                            datetime=datetime)
 
 
