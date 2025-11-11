@@ -58,8 +58,8 @@
 
     <div class="dashboard-card p-3 text-center">
       <h6 class="card-subtitle text-danger">PENDENTE ({{ target_month_display }})</h6>
-      <h2 class="card-title text-danger mb-0">R$ {{ '{:,.2f}'.format(total_pending_this_month).replace(',','.') }}</h2>
-      <small class="text-muted">(Total geral pendente: R$ {{ '{:,.2f}'.format(total_pending_all_time).replace(',','.') }})</small>
+      <h2 class="card-title text-danger mb-0"><span class="currency-value">R$ {{ '{:,.2f}'.format(total_pending_this_month).replace(',','.') }}</span></h2>
+      <small class="text-muted">(Total geral pendente: <span class="currency-value">R$ {{ '{:,.2f}'.format(total_pending_all_time).replace(',','.') }}</span>)</small>
     </div>
     
     <div class="dashboard-card p-3">
@@ -82,7 +82,7 @@
               <td data-label="Nome">{{ rule.debtor_name }}</td>
               <td data-label="Descrição">{{ rule.description or '—' }}</td>
               <td data-label="Dia Venc.">Dia {{ rule.day_of_month }}</td>
-              <td data-label="Valor" class="text-danger">R$ {{ '{:,.2f}'.format(rule.amount).replace(',','.') }}</td>
+              <td data-label="Valor" class="text-danger"><span class="currency-value">R$ {{ '{:,.2f}'.format(rule.amount).replace(',','.') }}</span></td>
               <td data-label="Ações">
                 <form action="{{ url_for('receivables.pay_recurring', recurring_id=rule.id) }}" method="POST" class="d-inline justify-content-end d-flex">
                   <button type="submit" class="btn btn-success" title="Marcar como Pago (Este Mês)">
@@ -119,7 +119,7 @@
               <td data-label="Nome">{{ name }}</td>
               <td data-label="Descrição">{{ desc or '—' }}</td>
               <td data-label="Data">{{ date }}</td>
-              <td data-label="Valor" class="text-danger">R$ {{ '{:,.2f}'.format(amount).replace(',','.') }}</td>
+              <td data-label="Valor" class="text-danger"><span class="currency-value">R$ {{ '{:,.2f}'.format(amount).replace(',','.') }}</span></td>
               <td data-label="Ações">
                 <div class="d-flex gap-1 justify-content-end">
                   <form action="{{ url_for('receivables.mark_manual_paid', receivable_id=id) }}" method="POST" class="d-inline">
@@ -162,7 +162,7 @@
               <strong>{{ name }}</strong>
               <small class="d-block text-muted">{{ desc or 'Sem descrição' }} ({{ date }})</small>
             </div>
-            <span class="badge bg-success rounded-pill">R$ {{ '{:,.2f}'.format(amount).replace(',','.') }}</span>
+            <span class="badge bg-success rounded-pill"><span class="currency-value">R$ {{ '{:,.2f}'.format(amount).replace(',','.') }}</span></span>
           </li>
           {% endfor %}
         </ul>
@@ -260,7 +260,7 @@
                       {{ rule.debtor_name }}
                       <small class="d-block text-muted">{{ rule.description }}</small>
                     </td>
-                    <td>R$ {{ '{:,.2f}'.format(rule.amount).replace(',','.') }}</td>
+                    <td><span class="currency-value">R$ {{ '{:,.2f}'.format(rule.amount).replace(',','.') }}</span></td>
                     <td>Dia {{ rule.day_of_month }}</td>
                     <td class="d-flex gap-1">
                       <button class="btn btn-info"

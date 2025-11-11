@@ -39,12 +39,12 @@
     <div class="dashboard-card p-0">
       <div class="card-body p-4 p-md-5 text-center">
         <h6 class="card-subtitle mb-3">SALÁRIO LÍQUIDO</h6>
-        <h2 class="card-title mb-4" style="font-size: 2.5rem;">R$ {{ '{:,.2f}'.format(salary|default(0)).replace(',','.') }}</h2>
+        <h2 class="card-title mb-4 currency-value" style="font-size: 2.5rem;">R$ {{ '{:,.2f}'.format(salary|default(0)).replace(',','.') }}</h2>
         
         <hr style="border-color: var(--border-color);">
         
         <h6 class="card-subtitle my-3">MÉDIA DE BENEFÍCIOS</h6>
-        <h2 class="card-title mb-0" style="font-size: 2.5rem;">R$ {{ '{:,.2f}'.format(bonus|default(0)).replace(',','.') }}</h2>
+        <h2 class="card-title mb-0 currency-value" style="font-size: 2.5rem;">R$ {{ '{:,.2f}'.format(bonus|default(0)).replace(',','.') }}</h2>
       </div>
     </div>
   </div>

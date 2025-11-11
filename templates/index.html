@@ -7,7 +7,7 @@
       <div class="card text-bg-success">
         <div class="card-body">
           <h5 class="card-title">Total Receitas (Filtro)</h5>
-          <h3 class="card-text">R$ {{ '%.2f'|format(income) }}</h3>
+          <h3 class="card-text"><span class="currency-value">R$ {{ '%.2f'|format(income) }}</span></h3>
         </div>
       </div>
     </div>
@@ -15,7 +15,7 @@
       <div class="card text-bg-danger">
         <div class="card-body">
           <h5 class="card-title">Total Despesas (Filtro)</h5>
-          <h3 class="card-text">R$ {{ '%.2f'|format(expense) }}</h3>
+          <h3 class="card-text"><span class="currency-value">R$ {{ '%.2f'|format(expense) }}</span></h3>
         </div>
       </div>
     </div>
@@ -23,7 +23,7 @@
       <div class="card text-bg-primary">
         <div class="card-body">
           <h5 class="card-title">Saldo (Filtro)</h5>
-          <h3 class="card-text">R$ {{ '%.2f'|format(bal) }}</h3>
+          <h3 class="card-text"><span class="currency-value">R$ {{ '%.2f'|format(bal) }}</span></h3>
         </div>
       </div>
     </div>
@@ -105,7 +105,7 @@
                 <td data-label="Data">{{ r.date }}</td>
                 <td data-label="Descrição">{{ r.description }}</td>
                 <td data-label="Categoria">{{ r.category }}</td>
-                <td data-label="Valor">R$ {{ '%.2f'|format(r.amount) }}</td>
+                <td data-label="Valor"><span class="currency-value">R$ {{ '%.2f'|format(r.amount) }}</span></td>
                 
                 <td data-label="Tipo">
                   <span class="badge {{ 'text-bg-success' if r.type == 'income' else 'text-bg-danger' }}">

@@ -178,6 +178,37 @@ body {
   font-weight: 600; 
 }
 
+/* Roxo (Lançamentos) */
+.sidebar-nav .nav-link.active:has(.icon-purple) {
+  background-color: rgba(168, 85, 247, 0.1); /* Fundo Roxo 10% */
+  color: var(--icon-purple);
+}
+
+/* Laranja (Orçamentos) */
+.sidebar-nav .nav-link.active:has(.icon-orange) {
+  background-color: rgba(249, 115, 22, 0.1); /* Fundo Laranja 10% */
+  color: var(--icon-orange);
+}
+
+/* Amarelo (Salário / Mudar Senha) */
+.sidebar-nav .nav-link.active:has(.icon-yellow) {
+  background-color: rgba(234, 179, 8, 0.1); /* Fundo Amarelo 10% */
+  color: var(--icon-yellow);
+}
+
+/* Verde (Cofrinho) */
+.sidebar-nav .nav-link.active:has(.icon-green) {
+  background-color: rgba(34, 197, 94, 0.1); /* Fundo Verde 10% */
+  color: var(--icon-green);
+}
+
+/* Vermelho (Recebíveis / Sair) */
+.sidebar-nav .nav-link.active:has(.icon-red) {
+  background-color: rgba(239, 68, 68, 0.1); /* Fundo Vermelho 10% */
+  color: var(--icon-red);
+}
+
+
 /* ==== MUDANÇA: Ícones Coloridos Restaurados ==== */
 .sidebar-icon {
   border-radius: 0.5rem; /* 8px */
@@ -211,14 +242,6 @@ body {
 .icon-red i { color: var(--icon-red); }
 .icon-grey { background: var(--primary-bg); border-color: var(--border-color); }
 
-/* Ícone Ativo (Fica mais brilhante) */
-.sidebar-nav .nav-link.active .sidebar-icon {
-  background-color: var(--accent-color);
-  border-color: var(--accent-color);
-}
-.sidebar-nav .nav-link.active .sidebar-icon i {
-  color: #fff; 
-}
 
 /* ================================================================
   --- 4. COMPONENTES PRINCIPAIS (Atualizados) ---
@@ -285,18 +308,28 @@ body {
   padding: 0.25rem 0.75rem;
   font-weight: 500;
 }
+
+/* --- INÍCIO DA ATUALIZAÇÃO (Tons Pastéis) --- */
+
 /* Botão Primário (Azul) */
 .btn-primary {
-  background-color: var(--accent-color);
-  color: #fff; 
+  background-color: rgba(59, 130, 246, 0.1) !important;
+  color: var(--icon-blue) !important;
+  border: 1px solid rgba(59, 130, 246, 0.2) !important;
   box-shadow: none;
   background-image: none;
 }
 .btn-primary:hover {
   transform: translateY(-2px);
-  background-color: var(--accent-color-light); 
+  background-color: var(--icon-blue) !important; /* Solid on hover */
+  color: #fff !important;
+  border-color: var(--icon-blue) !important;
   box-shadow: 0 4px 15px rgba(59, 130, 246, 0.2);
 }
+
+/* --- FIM DA ATUALIZAÇÃO --- */
+
+
 /* Botão Secundário (Ghost) */
 .btn-secondary, .btn-outline-secondary {
   background-color: var(--card-hover);
@@ -308,15 +341,6 @@ body {
   border-color: var(--border-color);
   color: var(--text-primary);
 }
-/* Botões de Ação (Verde/Vermelho) */
-.btn-success { background-color: var(--icon-green); color: #fff; }
-.btn-danger { background-color: var(--icon-red); color: #fff; }
-.btn-info { background-color: var(--icon-blue); color: #fff; }
-
-.btn-outline-success { border: 1px solid var(--icon-green); color: var(--icon-green); }
-.btn-outline-success:hover { background-color: var(--icon-green); color: #fff; }
-.btn-outline-danger { border: 1px solid var(--icon-red); color: var(--icon-red); }
-.btn-outline-danger:hover { background-color: var(--icon-red); color: #fff; }
 
 
 /* ==== MUDANÇA: Formulários (Modernos) ==== */
@@ -541,32 +565,90 @@ footer {
 }
 
 /* ================================================================
-  --- 8. CORREÇÕES DE CORES DE STATUS ---
+  --- 8. CORREÇÕES DE CORES DE STATUS (ATUALIZADO PARA PASTEL) ---
 ================================================================
 */
-/* Cards de Receita/Despesa/Saldo na Index */
-.text-bg-success {
+
+/* --- SUCESSO (VERDE - Cofrinho) --- */
+.text-bg-success,
+.badge.text-bg-success,
+.btn-success,
+.alert-success,
+.progress-bar.bg-success {
+  background-color: rgba(34, 197, 94, 0.1) !important;
+  color: var(--icon-green) !important;
+  border: 1px solid rgba(34, 197, 94, 0.2) !important;
+}
+.btn-success:hover {
   background-color: var(--icon-green) !important;
   color: #fff !important;
 }
-.text-bg-danger {
+.btn-outline-success { border: 1px solid var(--icon-green); color: var(--icon-green); }
+.btn-outline-success:hover { background-color: var(--icon-green); color: #fff; }
+.text-success, .border-success { color: var(--icon-green) !important; border-color: var(--icon-green) !important; }
+
+/* --- PERIGO (VERMELHO - Recebíveis) --- */
+.text-bg-danger,
+.badge.text-bg-danger,
+.btn-danger,
+.alert-danger,
+.progress-bar.bg-danger {
+  background-color: rgba(239, 68, 68, 0.1) !important;
+  color: var(--icon-red) !important;
+  border: 1px solid rgba(239, 68, 68, 0.2) !important;
+}
+.btn-danger:hover {
   background-color: var(--icon-red) !important;
   color: #fff !important;
 }
-/* Cor "primary" (azul) vira "neutra" */
+.btn-outline-danger { border: 1px solid var(--icon-red); color: var(--icon-red); }
+.btn-outline-danger:hover { background-color: var(--icon-red); color: #fff; }
+.text-danger, .border-danger { color: var(--icon-red) !important; border-color: var(--icon-red) !important; }
+
+/* --- AVISO (LARANJA - Orçamentos) --- */
+.text-bg-warning,
+.badge.text-bg-warning,
+.progress-bar.bg-warning,
+.btn-warning,
+.alert-warning {
+  background-color: rgba(249, 115, 22, 0.1) !important;
+  color: var(--icon-orange) !important;
+  border: 1px solid rgba(249, 115, 22, 0.2) !important;
+}
+.btn-warning:hover {
+  background-color: var(--icon-orange) !important;
+  color: #fff !important;
+}
+.btn-outline-warning { border: 1px solid var(--icon-orange); color: var(--icon-orange); }
+.btn-outline-warning:hover { background-color: var(--icon-orange); color: #fff; }
+.text-warning, .border-warning { color: var(--icon-orange) !important; border-color: var(--icon-orange) !important; }
+
+/* --- INFORMAÇÃO (ROXO - Lançamentos) --- */
+.text-bg-info,
+.badge.text-bg-info,
+.btn-info,
+.alert-info,
+.progress-bar.bg-info {
+  background-color: rgba(168, 85, 247, 0.1) !important;
+  color: var(--icon-purple) !important;
+  border: 1px solid rgba(168, 85, 247, 0.2) !important;
+}
+.btn-info:hover {
+  background-color: var(--icon-purple) !important;
+  color: #fff !important;
+}
+.btn-outline-info { border: 1px solid var(--icon-purple); color: var(--icon-purple); }
+.btn-outline-info:hover { background-color: var(--icon-purple); color: #fff; }
+.text-info, .border-info { color: var(--icon-purple) !important; border-color: var(--icon-purple) !important; }
+
+/* --- PRIMÁRIO (NEUTRO/CARD) --- */
+/* Cor "primary" (azul) vira "neutra" para cards */
 .text-bg-primary {
   background-color: var(--secondary-bg) !important;
   border: 1px solid var(--border-color);
   color: var(--text-primary) !important;
 }
 
-/* Badges de Receita/Despesa na tabela */
-.badge.text-bg-success {
-  background-color: var(--icon-green) !important;
-}
-.badge.text-bg-danger {
-  background-color: var(--icon-red) !important;
-}
 
 /* ================================================================
   --- 9. ESTILOS DO TUTORIAL (NOVO) ---
@@ -634,4 +716,18 @@ footer {
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+/* ================================================================
+  --- 10. ESTILOS DE VISIBILIDADE (NOVO) ---
+================================================================
+*/
+/* Este é o único estilo necessário. 
+   O JS faz o trabalho de salvar o valor original e substiuir por asteriscos.
+   Este estilo apenas formata os asteriscos.
+*/
+.currency-value .text-muted {
+  font-family: monospace;
+  font-weight: 600;
+  color: var(--text-muted) !important;
 }

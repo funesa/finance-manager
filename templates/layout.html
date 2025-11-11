@@ -229,11 +229,17 @@
         <button class="btn d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebar" aria-controls="sidebar">
           <i class="bi bi-list" style="font-size: 1.5rem;"></i>
         </button>
-        <span class="user-email ms-auto">
-          <i class="bi bi-person-circle me-1"></i>
-          {{ current_user.email }}
-        </span>
-      </header>
+        
+        <div class="d-flex align-items-center ms-auto">
+          <button class="btn btn-outline-secondary btn-sm" id="value-toggle-btn" title="Esconder Valores" style="border-radius: 50px; width: 40px; height: 40px;">
+            <i class="bi bi-eye-fill"></i>
+          </button>
+          <span class="user-email ms-2">
+            <i class="bi bi-person-circle me-1"></i>
+            {{ current_user.email }}
+          </span>
+        </div>
+        </header>
       {% endif %}
       <div class="content-wrapper">
         {% with messages = get_flashed_messages(with_categories=true) %}
@@ -398,6 +404,66 @@
           });
         }
         
+      });
+    </script>
+    {% endif %}
+    {% if current_user.is_authenticated %}
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggleBtn = document.getElementById('value-toggle-btn');
+        const OBSCURED_VALUE = "R$ *******"; // O que será mostrado
+        const STORAGE_KEY = 'financeMgrValuesHidden'; // Chave no localStorage
+
+        function updateElementsVisibility(isHidden) {
+          const elements = document.querySelectorAll('.currency-value');
+          
+          elements.forEach(el => {
+            if (isHidden) {
+              // Se não tiver o valor original salvo, salva agora
+              if (!el.hasAttribute('data-original-value')) {
+                el.setAttribute('data-original-value', el.innerHTML);
+              }
+              // Oculta o valor
+              el.innerHTML = `<span class="text-muted" style="font-family: monospace;">${OBSCURED_VALUE}</span>`;
+            } else {
+              // Mostra o valor
+              if (el.hasAttribute('data-original-value')) {
+                el.innerHTML = el.getAttribute('data-original-value');
+              }
+            }
+          });
+        }
+
+        function setButtonState(isHidden) {
+          if (toggleBtn) {
+            const toggleIcon = toggleBtn.querySelector('i');
+            if (isHidden) {
+              toggleIcon.classList.remove('bi-eye-fill');
+              toggleIcon.classList.add('bi-eye-slash-fill');
+              toggleBtn.setAttribute('title', 'Mostrar Valores');
+            } else {
+              toggleIcon.classList.remove('bi-eye-slash-fill');
+              toggleIcon.classList.add('bi-eye-fill');
+              toggleBtn.setAttribute('title', 'Esconder Valores');
+            }
+          }
+        }
+
+        // --- INICIALIZAÇÃO ---
+        let isHidden = localStorage.getItem(STORAGE_KEY) === 'true';
+        setButtonState(isHidden);
+        updateElementsVisibility(isHidden);
+
+        // --- EVENTO DE CLIQUE ---
+        if (toggleBtn) {
+          toggleBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            isHidden = !isHidden; // Inverte o estado
+            localStorage.setItem(STORAGE_KEY, isHidden); // Salva a preferência
+            setButtonState(isHidden);
+            updateElementsVisibility(isHidden);
+          });
+        }
       });
     </script>
     {% endif %}

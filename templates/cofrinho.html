@@ -54,7 +54,7 @@
                 <small class="text-muted">{{ s.bank or '—' }} {% if s.bank_code %}({{ s.bank_code }}){% endif %}</small>
               </div>
               <div class="text-end">
-                <div>R$ {{ '{:,.2f}'.format(s.balance|default(0)).replace(',','.') }}</div>
+                <div><span class="currency-value">R$ {{ '{:,.2f}'.format(s.balance|default(0)).replace(',','.') }}</span></div>
                 <div class="small text-muted">CDI: {{ s.cdi_rate if s.cdi_rate is not none else '—' }}%</div>
               </div>
             </li>
