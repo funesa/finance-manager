@@ -46,12 +46,18 @@ def index():
     cutoff_str = cutoff_date.strftime('%Y-%m') # "2026-03"
 
     total_pending_manual_target_month = 0
+    # DEBUG: verificar o que está sendo somado
+    debug_items = []
+    
     for row in pending_manual:
         # row[4] formata 'YYYY-MM-DD'. Comparação de string funciona (ISO 8601)
         # Se '2026-01-15' < '2026-03' -> True (Inclui atrasados)
         # Se '2026-02-28' < '2026-03' -> True (Inclui mês atual)
         if row[4] < cutoff_str:
             total_pending_manual_target_month += row[3]
+            debug_items.append(f"INCLUDED: {row[2]} ({row[4]}) = {row[3]}")
+        else:
+            debug_items.append(f"IGNORED: {row[2]} ({row[4]}) = {row[3]}")
     
     total_pending_target_month = total_pending_recurring_target_month + total_pending_manual_target_month
     
@@ -74,7 +80,8 @@ def index():
                            today=today.strftime('%Y-%m-%d'),
                            current_day=today.day,
                            # --- CORREÇÃO AQUI ---
-                           datetime=datetime
+                           datetime=datetime,
+                           debug_items=debug_items
                            )
 
 # ... (restante do arquivo 'receivables.py' permanece o mesmo) ...

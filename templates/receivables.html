@@ -12,11 +12,11 @@
 <div class="row g-3">
 
   <div class="col-lg-5 d-flex flex-column gap-3">
-    
+
     <div class="dashboard-card p-3">
       <h6 class="card-subtitle mb-3">Adicionar Avulsa / Parcelada</h6>
       <p class="small text-muted">Use para dívidas únicas ou parceladas (Ex: Pneu da PCX).</p>
-      
+
       <form method="post" action="{{ url_for('receivables.add_manual') }}">
         <div class="mb-2">
           <label class="form-label">Data (ou 1ª Parcela)</label>
@@ -43,7 +43,7 @@
         <button class="btn btn-primary" type="submit">Adicionar Dívida</button>
       </form>
     </div>
-    
+
     <div class="dashboard-card p-3">
       <h6 class="card-subtitle mb-3">Gerenciar Cobranças Recorrentes</h6>
       <p class="small text-muted">Use para assinaturas (Ex: Spotify, Netflix) que você cobra todo mês.</p>
@@ -58,10 +58,30 @@
 
     <div class="dashboard-card p-3 text-center">
       <h6 class="card-subtitle text-danger">PENDENTE ({{ target_month_display }})</h6>
-      <h2 class="card-title text-danger mb-0"><span class="currency-value">R$ {{ '{:,.2f}'.format(total_pending_this_month).replace(',','.') }}</span></h2>
-      <small class="text-muted">(Total geral pendente: <span class="currency-value">R$ {{ '{:,.2f}'.format(total_pending_all_time).replace(',','.') }}</span>)</small>
+      <h2 class="card-title text-danger mb-0"><span class="currency-value">R$ {{
+          '{:,.2f}'.format(total_pending_this_month).replace(',','.') }}</span></h2>
+      <small class="text-muted">(Total geral pendente: <span class="currency-value">R$ {{
+          '{:,.2f}'.format(total_pending_all_time).replace(',','.') }}</span>)</small>
+
+      {% if debug_items %}
+      <div class="mt-3 text-start">
+        <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse"
+          data-bs-target="#debugCollapse">
+          Ver Detalhes do Cálculo (Debug)
+        </button>
+        <div class="collapse mt-2" id="debugCollapse">
+          <div class="card card-body bg-dark text-white p-2 small" style="max-height: 200px; overflow-y: auto;">
+            <ul class="list-unstyled mb-0">
+              {% for item in debug_items %}
+              <li>{{ item }}</li>
+              {% endfor %}
+            </ul>
+          </div>
+        </div>
+      </div>
+      {% endif %}
     </div>
-    
+
     <div class="dashboard-card p-3">
       <h6 class="card-subtitle mb-3">Recorrentes Pendentes ({{ target_month_display }})</h6>
       {% if pending_recurring %}
@@ -82,9 +102,11 @@
               <td data-label="Nome">{{ rule.debtor_name }}</td>
               <td data-label="Descrição">{{ rule.description or '—' }}</td>
               <td data-label="Dia Venc.">Dia {{ rule.day_of_month }}</td>
-              <td data-label="Valor" class="text-danger"><span class="currency-value">R$ {{ '{:,.2f}'.format(rule.amount).replace(',','.') }}</span></td>
+              <td data-label="Valor" class="text-danger"><span class="currency-value">R$ {{
+                  '{:,.2f}'.format(rule.amount).replace(',','.') }}</span></td>
               <td data-label="Ações">
-                <form action="{{ url_for('receivables.pay_recurring', recurring_id=rule.id) }}" method="POST" class="d-inline justify-content-end d-flex">
+                <form action="{{ url_for('receivables.pay_recurring', recurring_id=rule.id) }}" method="POST"
+                  class="d-inline justify-content-end d-flex">
                   <button type="submit" class="btn btn-success" title="Marcar como Pago (Este Mês)">
                     <i class="bi bi-check-lg me-1"></i> Recebido
                   </button>
@@ -119,23 +141,24 @@
               <td data-label="Nome">{{ name }}</td>
               <td data-label="Descrição">{{ desc or '—' }}</td>
               <td data-label="Data">{{ date }}</td>
-              <td data-label="Valor" class="text-danger"><span class="currency-value">R$ {{ '{:,.2f}'.format(amount).replace(',','.') }}</span></td>
+              <td data-label="Valor" class="text-danger"><span class="currency-value">R$ {{
+                  '{:,.2f}'.format(amount).replace(',','.') }}</span></td>
               <td data-label="Ações">
                 <div class="d-flex gap-1 justify-content-end">
-                  <form action="{{ url_for('receivables.mark_manual_paid', receivable_id=id) }}" method="POST" class="d-inline">
+                  <form action="{{ url_for('receivables.mark_manual_paid', receivable_id=id) }}" method="POST"
+                    class="d-inline">
                     <button type="submit" class="btn btn-success" title="Marcar como Pago">
                       <i class="bi bi-check-lg"></i>
                     </button>
                   </form>
-                  <button class="btn btn-info" 
-                          data-bs-toggle="modal" 
-                          data-bs-target="#editReceivableModal" 
-                          onclick="loadReceivableData({{ id }})"
-                          title="Editar">
+                  <button class="btn btn-info" data-bs-toggle="modal" data-bs-target="#editReceivableModal"
+                    onclick="loadReceivableData({{ id }})" title="Editar">
                     <i class="bi bi-pencil-fill"></i>
                   </button>
-                  <form action="{{ url_for('receivables.delete_manual', receivable_id=id) }}" method="POST" class="d-inline">
-                    <button type="submit" class="btn btn-danger" title="Apagar" onclick="return confirm('Tem certeza que deseja apagar?');">
+                  <form action="{{ url_for('receivables.delete_manual', receivable_id=id) }}" method="POST"
+                    class="d-inline">
+                    <button type="submit" class="btn btn-danger" title="Apagar"
+                      onclick="return confirm('Tem certeza que deseja apagar?');">
                       <i class="bi bi-trash-fill"></i>
                     </button>
                   </form>
@@ -162,7 +185,8 @@
               <strong>{{ name }}</strong>
               <small class="d-block text-muted">{{ desc or 'Sem descrição' }} ({{ date }})</small>
             </div>
-            <span class="badge bg-success rounded-pill"><span class="currency-value">R$ {{ '{:,.2f}'.format(amount).replace(',','.') }}</span></span>
+            <span class="badge bg-success rounded-pill"><span class="currency-value">R$ {{
+                '{:,.2f}'.format(amount).replace(',','.') }}</span></span>
           </li>
           {% endfor %}
         </ul>
@@ -263,15 +287,14 @@
                     <td><span class="currency-value">R$ {{ '{:,.2f}'.format(rule.amount).replace(',','.') }}</span></td>
                     <td>Dia {{ rule.day_of_month }}</td>
                     <td class="d-flex gap-1">
-                      <button class="btn btn-info"
-                              data-bs-toggle="modal" 
-                              data-bs-target="#editRecurringModal" 
-                              onclick="loadRecurringData({{ rule.id }})"
-                              title="Editar Regra">
+                      <button class="btn btn-info" data-bs-toggle="modal" data-bs-target="#editRecurringModal"
+                        onclick="loadRecurringData({{ rule.id }})" title="Editar Regra">
                         <i class="bi bi-pencil-fill"></i>
                       </button>
-                      <form action="{{ url_for('receivables.delete_recurring', recurring_id=rule.id) }}" method="POST" class="d-inline">
-                        <button type="submit" class="btn btn-danger" title="Apagar Regra" onclick="return confirm('Tem certeza que deseja apagar esta REGRA? Isso não afeta o histórico.');">
+                      <form action="{{ url_for('receivables.delete_recurring', recurring_id=rule.id) }}" method="POST"
+                        class="d-inline">
+                        <button type="submit" class="btn btn-danger" title="Apagar Regra"
+                          onclick="return confirm('Tem certeza que deseja apagar esta REGRA? Isso não afeta o histórico.');">
                           <i class="bi bi-trash-fill"></i>
                         </button>
                       </form>
@@ -311,7 +334,8 @@
           </div>
           <div class="mb-2">
             <label class="form-label">Dia do Vencimento (1-31)</label>
-            <input name="edit_recurring_day" id="edit_recurring_day" type="number" min="1" max="31" class="form-control" required>
+            <input name="edit_recurring_day" id="edit_recurring_day" type="number" min="1" max="31" class="form-control"
+              required>
           </div>
         </div>
         <div class="modal-footer">
@@ -326,42 +350,42 @@
 
 {% block scripts %}
 <script>
-// Função para carregar dados no Modal de Edição (Avulsa/Parcelada)
-async function loadReceivableData(receivableId) {
-  try {
-    const response = await fetch(`/api/receivable/${receivableId}`);
-    if (!response.ok) throw new Error('Não foi possível carregar os dados.');
-    const data = await response.json();
-    
-    document.getElementById('editReceivableForm').action = `/receivables/edit_manual/${receivableId}`;
-    document.getElementById('edit_date').value = data.date;
-    document.getElementById('edit_debtor_name').value = data.debtor_name;
-    document.getElementById('edit_description').value = data.description;
-    document.getElementById('edit_amount').value = data.amount;
+  // Função para carregar dados no Modal de Edição (Avulsa/Parcelada)
+  async function loadReceivableData(receivableId) {
+    try {
+      const response = await fetch(`/api/receivable/${receivableId}`);
+      if (!response.ok) throw new Error('Não foi possível carregar os dados.');
+      const data = await response.json();
 
-  } catch (error) {
-    console.error('Erro:', error);
-    alert('Erro ao buscar dados da dívida.');
+      document.getElementById('editReceivableForm').action = `/receivables/edit_manual/${receivableId}`;
+      document.getElementById('edit_date').value = data.date;
+      document.getElementById('edit_debtor_name').value = data.debtor_name;
+      document.getElementById('edit_description').value = data.description;
+      document.getElementById('edit_amount').value = data.amount;
+
+    } catch (error) {
+      console.error('Erro:', error);
+      alert('Erro ao buscar dados da dívida.');
+    }
   }
-}
 
-// Função para carregar dados no Modal de Edição (Recorrente)
-async function loadRecurringData(recurringId) {
-  try {
-    const response = await fetch(`/api/recurring_receivable/${recurringId}`);
-    if (!response.ok) throw new Error('Não foi possível carregar os dados da regra.');
-    const data = await response.json();
-    
-    document.getElementById('editRecurringForm').action = `/receivables/edit_recurring/${recurringId}`;
-    document.getElementById('edit_recurring_debtor_name').value = data.debtor_name;
-    document.getElementById('edit_recurring_description').value = data.description;
-    document.getElementById('edit_recurring_amount').value = data.amount;
-    document.getElementById('edit_recurring_day').value = data.day_of_month;
+  // Função para carregar dados no Modal de Edição (Recorrente)
+  async function loadRecurringData(recurringId) {
+    try {
+      const response = await fetch(`/api/recurring_receivable/${recurringId}`);
+      if (!response.ok) throw new Error('Não foi possível carregar os dados da regra.');
+      const data = await response.json();
 
-  } catch (error) {
-    console.error('Erro:', error);
-    alert('Erro ao buscar dados da regra.');
+      document.getElementById('editRecurringForm').action = `/receivables/edit_recurring/${recurringId}`;
+      document.getElementById('edit_recurring_debtor_name').value = data.debtor_name;
+      document.getElementById('edit_recurring_description').value = data.description;
+      document.getElementById('edit_recurring_amount').value = data.amount;
+      document.getElementById('edit_recurring_day').value = data.day_of_month;
+
+    } catch (error) {
+      console.error('Erro:', error);
+      alert('Erro ao buscar dados da regra.');
+    }
   }
-}
 </script>
 {% endblock %}
