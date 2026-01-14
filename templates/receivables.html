@@ -146,7 +146,7 @@
             <tr>
               <td data-label="Nome">{{ name }}</td>
               <td data-label="Descrição">{{ desc or '—' }}</td>
-              <td data-label="Data">{{ date }}</td>
+              <td data-label="Data">{{ date.split('-') | reverse | join('/') }}</td>
               <td data-label="Valor" class="text-danger"><span class="currency-value">R$ {{
                   '{:,.2f}'.format(amount).replace(',','.') }}</span></td>
               <td data-label="Ações">
@@ -189,7 +189,8 @@
           <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent">
             <div>
               <strong>{{ name }}</strong>
-              <small class="d-block text-muted">{{ desc or 'Sem descrição' }} ({{ date }})</small>
+              <small class="d-block text-muted">{{ desc or 'Sem descrição' }} ({{ date.split('-') | reverse | join('/')
+                }})</small>
             </div>
             <span class="badge bg-success rounded-pill"><span class="currency-value">R$ {{
                 '{:,.2f}'.format(amount).replace(',','.') }}</span></span>
