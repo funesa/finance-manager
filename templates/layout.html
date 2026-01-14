@@ -1,0 +1,503 @@
+<!doctype html>
+<html lang="pt-br" data-bs-theme="dark">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Finance Manager</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.css" rel="stylesheet">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css', v=cache_buster) }}">
+    
+  </head>
+  <body>
+
+    {% if current_user.is_authenticated and not session.get('is_aware') %}
+    <div class="modal fade" id="warningModal" 
+         tabindex="-1" 
+         aria-labelledby="warningModalLabel" 
+         aria-hidden="true" 
+         data-bs-backdrop="static" 
+         data-bs-keyboard="false">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="warningModalLabel">
+              <i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>
+              Aviso Importante
+            </h5>
+          </div>
+          <div class="modal-body">
+            <p>Este sistema ainda está em <strong>fase de testes (Beta)</strong>.</p>
+            <p>Erros, bugs, mau funcionamento e até <strong>perda de dados</strong> podem ocorrer a qualquer momento.</p>
+            <hr>
+            <p class="text-danger fw-bold">NÃO INSIRA DADOS PESSOAIS SENSÍVEIS, como números de CPF, contas bancárias reais, cartões de crédito, etc.</p>
+            <p>Use apenas dados fictícios para testes.</p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-primary" id="accept-warning-btn">
+              Estou ciente e aceito os riscos
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+    {% if current_user.is_authenticated and not session.get('has_seen_tutorial') %}
+    <div class="modal fade" id="tutorialModal" 
+         tabindex="-1" 
+         aria-labelledby="tutorialModalLabel" 
+         aria-hidden="true" 
+         data-bs-backdrop="static" 
+         data-bs-keyboard="false">
+      
+      <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            
+            <h5 class="modal-title w-100 text-center" id="tutorialModalLabel">
+              <i class="bi bi-stars" style="color: #eab308;"></i>
+              Bem-vindo ao FinanceMgr!
+            </h5>
+          </div>
+          <div class="modal-body">
+            
+            <div class="tutorial-step active" data-step="1">
+              <h4><div class="sidebar-icon icon-blue"><i class="bi bi-bar-chart-line-fill"></i></div>Visão Geral</h4>
+              <p>Esta é a <strong>Visão Geral</strong> (Dashboard). Aqui você vê um resumo de tudo: seus gastos, receitas, orçamentos e o calendário de lançamentos.</p>
+            </div>
+            
+            <div class="tutorial-step" data-step="2">
+              <h4><div class="sidebar-icon icon-purple"><i class="bi bi-list-task"></i></div>Lançamentos</h4>
+              <p>A tela de <strong>Lançamentos</strong> é o coração do app. Adicione cada 'Despesa' ou 'Receita' aqui. Use os filtros para organizar e encontrar qualquer transação.</p>
+            </div>
+            
+            <div class="tutorial-step" data-step="3">
+              <h4><div class="sidebar-icon icon-orange"><i class="bi bi-piggy-bank-fill"></i></div>Orçamentos</h4>
+              <p>Em <strong>Orçamentos</strong>, você define limites de gastos para categorias (ex: 'R$ 200 para Água'). A barra de progresso mostra o quanto você já gastou naquele mês.</p>
+            </div>
+
+            <div class="tutorial-step" data-step="4">
+              <h4><div class="sidebar-icon icon-yellow"><i class="bi bi-cash-coin"></i></div>Salário/Benefícios</h4>
+              <p>Em <strong>Salário/Benefícios</strong>, informe sua renda fixa. Isso ajuda a Visão Geral a calcular seu saldo mensal corretamente.</p>
+            </div>
+
+            <div class="tutorial-step" data-step="5">
+              <h4><div class="sidebar-icon icon-green"><i class="bi bi-piggy-bank"></i></div>Cofrinho</h4>
+              <p>Use o <strong>Cofrinho</strong> para registrar suas economias e investimentos que estão guardados.</p>
+            </div>
+
+            <div class="tutorial-step" data-step="6">
+              <h4><div class="sidebar-icon icon-red"><i class="bi bi-people-fill"></i></div>Recebíveis</h4>
+              <p>A tela de <strong>Recebíveis</strong> é para controlar dinheiro que *outras pessoas* devem a você (ex: um amigo que usou seu cartão ou uma assinatura que você cobra).</p>
+            </div>
+            
+            <div class="tutorial-step" data-step="7">
+              <h4><i class="bi bi-check-circle-fill me-2" style="color: var(--icon-green);"></i>Tudo Pronto!</h4>
+              <p>O sistema é simples: informe sua renda, defina orçamentos e lance suas transações.</p>
+              <p>Bom controle financeiro!</p>
+            </div>
+
+            <div class="tutorial-progress-dots d-flex justify-content-center gap-2 mt-4">
+              </div>
+
+          </div>
+          <div class="modal-footer d-flex justify-content-between">
+            <button type="button" class="btn btn-secondary" id="tutorial-skip-btn">Pular</button>
+            <div>
+              <button type="button" class="btn btn-outline-secondary" id="tutorial-prev-btn" style="display: none;">Anterior</button>
+              <button type="button" class="btn btn-primary" id="tutorial-next-btn">Próximo</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+    <aside id="sidebar" class="offcanvas-lg offcanvas-start" tabindex="-1" aria-labelledby="sidebarLabel">
+
+      <div class="offcanvas-header">
+        <a class="sidebar-brand" href="{{ url_for('dashboard.index') }}" id="sidebarLabel">
+          <i class="bi bi-wallet2"></i>
+          <span>FinanceMgr</span>
+        </a>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#sidebar" aria-label="Close"></button>
+      </div>
+
+      <div class="offcanvas-body">
+        <a class="sidebar-brand d-none d-lg-flex" href="{{ url_for('dashboard.index') }}">
+          <i class="bi bi-wallet2"></i>
+          <span>FinanceMgr</span>
+        </a>
+
+        <nav class="sidebar-nav">
+          {% if current_user.is_authenticated %}
+            <a class="nav-link {% if active_page == 'dashboard' %}active{% endif %}" 
+               href="{{ url_for('dashboard.index') }}">
+               <div class="sidebar-icon icon-blue">
+                <i class="bi bi-bar-chart-line-fill"></i>
+              </div>
+              <span>Visão Geral</span>
+            </a>
+            
+            <a class="nav-link {% if active_page == 'transactions' %}active{% endif %}" 
+               href="{{ url_for('transactions.index') }}">
+               <div class="sidebar-icon icon-purple">
+                <i class="bi bi-list-task"></i>
+              </div>
+              <span>Lançamentos</span>
+            </a>
+            
+            <a class="nav-link {% if active_page == 'budgets' %}active{% endif %}" 
+               href="{{ url_for('budgets.index') }}">
+               <div class="sidebar-icon icon-orange">
+                <i class="bi bi-piggy-bank-fill"></i>
+              </div>
+              <span>Orçamentos</span>
+            </a>
+            
+            <a class="nav-link {% if active_page == 'salary' %}active{% endif %}"
+               href="{{ url_for('salary.index') }}">
+               <div class="sidebar-icon icon-yellow">
+                <i class="bi bi-cash-coin"></i>
+              </div>
+              <span>Salário/Benefícios</span>
+            </a>
+            
+            <a class="nav-link {% if active_page == 'savings' %}active{% endif %}"
+               href="{{ url_for('savings.index') }}">
+               <div class="sidebar-icon icon-green">
+                <i class="bi bi-piggy-bank"></i>
+              </div>
+              <span>Cofrinho</span>
+            </a>
+            
+            <a class="nav-link {% if active_page == 'receivables' %}active{% endif %}"
+               href="{{ url_for('receivables.index') }}">
+               <div class="sidebar-icon icon-red">
+                <i class="bi bi-people-fill"></i>
+              </div>
+              <span>Recebíveis</span>
+            </a>
+          {% else %}
+            <a class="nav-link {% if active_page == 'login' %}active{% endif %}" 
+               href="{{ url_for('auth.login') }}">
+              <i class="bi bi-box-arrow-in-right"></i>
+              <span>Login</span>
+            </a>
+            <a class="nav-link {% if active_page == 'register' %}active{% endif %}" 
+               href="{{ url_for('auth.register') }}">
+              <i class="bi bi-person-plus"></i>
+              <span>Registrar</span>
+            </a>
+          {% endif %}
+        </nav>
+        
+        <div class="mt-auto"></div>
+
+        {% if current_user.is_authenticated %}
+        <hr style="border-color: var(--border-color);">
+        <div class="sidebar-nav">
+          
+          <a class="nav-link {% if active_page == 'change_password' %}active{% endif %}" 
+             href="{{ url_for('auth.change_password') }}">
+             <div class="sidebar-icon icon-yellow">
+              <i class="bi bi-key-fill"></i>
+            </div>
+            <span>Mudar Senha</span>
+          </a>
+
+          <a class="nav-link" href="{{ url_for('auth.logout') }}">
+            <div class="sidebar-icon icon-red">
+              <i class="bi bi-box-arrow-left"></i>
+            </div>
+            <span>Sair</span>
+          </a>
+        </div>
+        {% endif %}
+      </div>
+    </aside>
+
+    <main id="main-content">
+      {% if current_user.is_authenticated %}
+      <header class="header-bar">
+        <button class="btn d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebar" aria-controls="sidebar">
+          <i class="bi bi-list" style="font-size: 1.5rem;"></i>
+        </button>
+        
+        <div class="d-flex align-items-center ms-auto">
+          <button class="btn btn-outline-secondary btn-sm" id="value-toggle-btn" title="Esconder Valores" style="border-radius: 50px; width: 40px; height: 40px;">
+            <i class="bi bi-eye-fill"></i>
+          </button>
+          <span class="user-email ms-2">
+            <i class="bi bi-person-circle me-1"></i>
+            {{ current_user.email }}
+          </span>
+        </div>
+        </header>
+      {% endif %}
+      <div class="content-wrapper">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="messages-container mb-4" style="max-width: 800px; margin: 0 auto 1.5rem auto;">
+              {% for category, msg in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                  {% if category == 'success' %}
+                    <i class="bi bi-check-circle-fill me-2"></i>
+                  {% elif category == 'danger' %}
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                  {% elif category == 'warning' %}
+                    <i class="bi bi-exclamation-circle-fill me-2"></i>
+                  {% else %}
+                    <i class="bi bi-info-circle-fill me-2"></i>
+                  {% endif %}
+                  {{ msg }}
+                  <button typebutton" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+        {% block content %}{% endblock %}
+      </div>
+      <footer class="mt-auto">
+        <p class="mb-0">&copy; {{ datetime.utcnow().strftime('%Y') }} Finance Manager</p>
+      </footer>
+    </main>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+        [...tooltipTriggerList].map(el => new bootstrap.Tooltip(el));
+      });
+    </script>
+    
+    {% block scripts %}
+    {% endblock %}
+
+    {% if current_user.is_authenticated and not session.get('is_aware') %}
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const modalEl = document.getElementById('warningModal');
+        if (modalEl) {
+          const warningModal = new bootstrap.Modal(modalEl, {
+            backdrop: 'static',
+            keyboard: false
+          });
+          warningModal.show();
+
+          document.getElementById('accept-warning-btn').addEventListener('click', function() {
+            fetch("{{ url_for('transactions.accept_warning') }}", {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' }
+            }).then(response => {
+              if (response.ok) { warningModal.hide(); } 
+              else { alert('Ocorreu um erro. Por favor, recarregue a página.'); }
+            });
+          });
+        }
+      });
+    </script>
+    {% endif %}
+    {% if current_user.is_authenticated and not session.get('has_seen_tutorial') %}
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const modalEl = document.getElementById('tutorialModal');
+        if (!modalEl) return;
+
+        const tutorialModal = new bootstrap.Modal(modalEl, {
+          backdrop: 'static',
+          keyboard: false
+        });
+        
+        const steps = document.querySelectorAll('.tutorial-step');
+        const nextBtn = document.getElementById('tutorial-next-btn');
+        const prevBtn = document.getElementById('tutorial-prev-btn');
+        const skipBtn = document.getElementById('tutorial-skip-btn');
+        const dotsContainer = document.querySelector('.tutorial-progress-dots');
+        let currentStep = 1;
+        const totalSteps = steps.length;
+
+        // Cria as bolinhas de progresso
+        for (let i = 0; i < totalSteps; i++) {
+          const dot = document.createElement('span');
+          dot.classList.add('tutorial-dot');
+          if (i === 0) dot.classList.add('active');
+          dotsContainer.appendChild(dot);
+        }
+        const dots = document.querySelectorAll('.tutorial-dot');
+
+        function updateTutorialState() {
+          steps.forEach(step => {
+            step.classList.remove('active');
+            if (parseInt(step.dataset.step) === currentStep) {
+              step.classList.add('active');
+            }
+          });
+
+          dots.forEach((dot, index) => {
+            dot.classList.remove('active');
+            if (index + 1 === currentStep) {
+              dot.classList.add('active');
+            }
+          });
+
+          // Lógica dos botões
+          prevBtn.style.display = (currentStep === 1) ? 'none' : 'inline-block';
+          skipBtn.style.display = (currentStep === totalSteps) ? 'none' : 'inline-block';
+          
+          if (currentStep === totalSteps) {
+            nextBtn.innerText = 'Concluir';
+          } else {
+            nextBtn.innerText = 'Próximo';
+          }
+        }
+
+        function finishTutorial() {
+          fetch("{{ url_for('transactions.finish_tutorial') }}", {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+          }).then(response => {
+            if (response.ok) {
+              tutorialModal.hide();
+            } else {
+              alert('Ocorreu um erro. O tutorial pode aparecer novamente.');
+              tutorialModal.hide();
+            }
+          });
+        }
+
+        nextBtn.addEventListener('click', function() {
+          if (currentStep < totalSteps) {
+            currentStep++;
+            updateTutorialState();
+          } else {
+            // Está na última etapa, o botão é "Concluir"
+            finishTutorial();
+          }
+        });
+
+        prevBtn.addEventListener('click', function() {
+          if (currentStep > 1) {
+            currentStep--;
+            updateTutorialState();
+          }
+        });
+
+        skipBtn.addEventListener('click', function() {
+          finishTutorial();
+        });
+
+        // Mostra o modal (apenas se o modal de aviso beta NÃO existir ou não for mostrado)
+        const warningModalEl = document.getElementById('warningModal');
+        if (!warningModalEl) {
+           tutorialModal.show();
+        } else {
+          // Se o modal de aviso existir, espera ele ser fechado para mostrar o tutorial
+          warningModalEl.addEventListener('hidden.bs.modal', function () {
+            tutorialModal.show();
+          });
+        }
+        
+      });
+    </script>
+    {% endif %}
+    {% if current_user.is_authenticated %}
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggleBtn = document.getElementById('value-toggle-btn');
+        const OBSCURED_VALUE = "R$ *******"; // O que será mostrado
+        const STORAGE_KEY = 'financeMgrValuesHidden'; // Chave no localStorage
+
+        function updateElementsVisibility(isHidden) {
+          const elements = document.querySelectorAll('.currency-value');
+          
+          elements.forEach(el => {
+            if (isHidden) {
+              // Se não tiver o valor original salvo, salva agora
+              if (!el.hasAttribute('data-original-value')) {
+                el.setAttribute('data-original-value', el.innerHTML);
+              }
+              // Oculta o valor
+              el.innerHTML = `<span class="text-muted" style="font-family: monospace;">${OBSCURED_VALUE}</span>`;
+            } else {
+              // Mostra o valor
+              if (el.hasAttribute('data-original-value')) {
+                el.innerHTML = el.getAttribute('data-original-value');
+              }
+            }
+          });
+        }
+
+        function setButtonState(isHidden) {
+          if (toggleBtn) {
+            const toggleIcon = toggleBtn.querySelector('i');
+            if (isHidden) {
+              toggleIcon.classList.remove('bi-eye-fill');
+              toggleIcon.classList.add('bi-eye-slash-fill');
+              toggleBtn.setAttribute('title', 'Mostrar Valores');
+            } else {
+              toggleIcon.classList.remove('bi-eye-slash-fill');
+              toggleIcon.classList.add('bi-eye-fill');
+              toggleBtn.setAttribute('title', 'Esconder Valores');
+            }
+          }
+        }
+
+        // --- INICIALIZAÇÃO ---
+        let isHidden = localStorage.getItem(STORAGE_KEY) === 'true';
+        setButtonState(isHidden);
+        updateElementsVisibility(isHidden);
+
+        // --- EVENTO DE CLIQUE ---
+        if (toggleBtn) {
+          toggleBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            isHidden = !isHidden; // Inverte o estado
+            localStorage.setItem(STORAGE_KEY, isHidden); // Salva a preferência
+            setButtonState(isHidden);
+            updateElementsVisibility(isHidden);
+          });
+        }
+      });
+    </script>
+    {% endif %}
+    {% if active_page == 'budgets' %}
+    <div class="modal fade" id="addBudgetModal" tabindex="-1" aria-labelledby="addBudgetModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="addBudgetModalLabel">Adicionar novo orçamento</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+          </div>
+          <form method="post" action="{{ url_for('budgets.add_category') }}">
+            <div class="modal-body">
+              <div class="mb-3">
+                <label class="form-label">Nome da categoria</label>
+                <input type="text" name="category_name" class="form-control" required>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Valor do orçamento (opcional)</label>
+                <div class="input-group">
+                  <span class="input-group-text">R$</span>
+                  <input type="text" name="category_amount" class="form-control" placeholder="0.00">
+                </div>
+              </div>
+              <input type="hidden" name="month" value="{{ current_month }}">
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+              <button type="submit" class="btn btn-primary">Adicionar</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </body>
+</html>

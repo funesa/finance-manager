@@ -1,0 +1,288 @@
+{% extends "layout.html" %}
+{% set active_page = "transactions" %}
+
+{% block content %}
+  <div class="row mb-4">
+    <div class="col-md-4">
+      <div class="card text-bg-success">
+        <div class="card-body">
+          <h5 class="card-title">Total Receitas (Filtro)</h5>
+          <h3 class="card-text"><span class="currency-value">R$ {{ '%.2f'|format(income) }}</span></h3>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card text-bg-danger">
+        <div class="card-body">
+          <h5 class="card-title">Total Despesas (Filtro)</h5>
+          <h3 class="card-text"><span class="currency-value">R$ {{ '%.2f'|format(expense) }}</span></h3>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card text-bg-primary">
+        <div class="card-body">
+          <h5 class="card-title">Saldo (Filtro)</h5>
+          <h3 class="card-text"><span class="currency-value">R$ {{ '%.2f'|format(bal) }}</span></h3>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      
+      <div class="d-flex flex-column flex-md-row justify-content-md-between align-items-md-center mb-3 gap-3">
+        <h4 class="card-title mb-0">Lançamentos</h4>
+        <div>
+          <button type="button" class="btn btn-primary d-none d-md-inline-block" data-bs-toggle="modal" data-bs-target="#addModal">
+            <i class="bi bi-plus-circle"></i> Adicionar Lançamento
+          </button>
+
+          <button class="btn btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse" aria-expanded="false" aria-controls="filterCollapse">
+            <i class="bi bi-filter"></i> Filtros e Relatórios
+          </button>
+        </div>
+      </div>
+
+      <div class="collapse" id="filterCollapse">
+        <form method="get" class="row g-3 mb-3 p-3 bg-body-tertiary rounded">
+          <div class="col-md-3">
+            <label class="form-label" for="filterSearch">Pesquisar</label>
+            <input type="text" name="search" id="filterSearch" value="{{ search }}" class="form-control" placeholder="Pesquisar..." />
+          </div>
+          <div class="col-md-3">
+            <label class="form-label" for="filterCategory">Categoria</label>
+            <select name="category" id="filterCategory" class="form-select">
+              <option value="">Todas Categorias</option>
+              {% for c in categories %}
+                <option value="{{ c }}" {% if c==category %}selected{% endif %}>{{ c }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-2">
+            <label class="form-label" for="filterDateFrom">De:</label>
+            <input type="date" name="date_from" id="filterDateFrom" value="{{ date_from }}" class="form-control" title="Data Início" />
+          </div>
+          <div class="col-md-2">
+            <label class="form-label" for="filterDateTo">Até:</label>
+            <input type="date" name="date_to" id="filterDateTo" value="{{ date_to }}" class="form-control" title="Data Fim" />
+          </div>
+          <div class="col-md-2 d-grid align-self-end">
+            <button class="btn btn-primary">
+              <i class="bi bi-search"></i> Filtrar
+            </button>
+          </div>
+        </form>
+        
+        <div class="mb-3 p-3 bg-body-tertiary rounded">
+          <h6 class="mb-3">Exportar Relatórios</h6>
+          <a class="btn btn-outline-success btn-sm" href="/export/excel?search={{ search }}&category={{ category }}&date_from={{ date_from }}&date_to={{ date_to }}">
+            <i class="bi bi-file-earmark-excel"></i> Baixar Excel
+          </a>
+          <a class="btn btn-outline-danger btn-sm" href="/export/pdf?search={{ search }}&category={{ category }}&date_from={{ date_from }}&date_to={{ date_to }}">
+            <i class="bi bi-file-earmark-pdf"></i> Baixar PDF
+          </a>
+        </div>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-dark table-striped table-hover table-mobile-cards">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Data</th>
+              <th>Descrição</th>
+              <th>Categoria</th>
+              <th>Valor</th>
+              <th>Tipo</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in rows %}
+              <tr>
+                <td data-label="ID">{{ r.id }}</td>
+                <td data-label="Data">{{ r.date }}</td>
+                <td data-label="Descrição">{{ r.description }}</td>
+                <td data-label="Categoria">{{ r.category }}</td>
+                <td data-label="Valor"><span class="currency-value">R$ {{ '%.2f'|format(r.amount) }}</span></td>
+                
+                <td data-label="Tipo">
+                  <span class="badge {{ 'text-bg-success' if r.type == 'income' else 'text-bg-danger' }}">
+                    {% if r.type == 'income' %}
+                      Receita
+                    {% else %}
+                      Despesa
+                    {% endif %}
+                  </span>
+                </td>
+                <td data-label="Ações">
+                  <div class="d-flex gap-2 justify-content-end">
+                    <button class="btn btn-sm btn-outline-primary edit-btn" data-id="{{ r.id }}" title="Editar">
+                      <i class="bi bi-pencil"></i>
+                    </button>
+                    <form method="post" action="/delete/{{ r.id }}" onsubmit="return confirm('Excluir transação ID {{ r.id }}?');">
+                      <button class="btn btn-sm btn-outline-danger" title="Excluir">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            {% else %}
+              <tr>
+                <td colspan="7" class="text-center">Nenhuma transação encontrada.</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <nav aria-label="Page navigation">
+        <ul class="pagination justify-content-center">
+          {% for p in range(1, pages+1) %}
+            <li class="page-item {% if p==page %}active{% endif %}"><a class="page-link" href="?page={{ p }}&per_page={{ per_page }}&search={{ search }}&category={{ category }}&date_from={{ date_from }}&date_to={{ date_to }}">{{ p }}</a></li>
+          {% endfor %}
+        </ul>
+      </nav>
+
+    </div>
+  </div>
+
+  <a href="#" 
+     id="fab" 
+     class="d-lg-none" 
+     data-bs-toggle="modal" 
+     data-bs-target="#addModal"
+     title="Adicionar Lançamento">
+    <i class="bi bi-plus-lg"></i>
+  </a>
+
+
+  <div class="modal fade" id="addModal" tabindex="-1" aria-labelledby="addModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h1 class="modal-title fs-5" id="addModalLabel">Adicionar Nova Transação</h1>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <form method="post" action="/add">
+          <div class="modal-body">
+            <div class="mb-2">
+              <label class="form-label">Data</label>
+              <input type="date" name="date" class="form-control" value="{{ today }}" required />
+            </div>
+            <div class="mb-2">
+              <label class="form-label">Tipo</label>
+              <select name="type" class="form-select">
+                <option value="expense">Despesa</option>
+                <option value="income">Receita</option>
+              </select>
+            </div>
+            <div class="mb-2">
+              <label class="form-label">Categoria</label>
+              <select name="category" class="form-select">
+                {% for c in categories %}
+                  <option value="{{ c }}">{{ c }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="mb-2">
+              <label class="form-label">Descrição</label>
+              <input type="text" name="description" class="form-control" />
+            </div>
+            <div class="mb-2">
+              <label class="form-label">Valor</label>
+              <input type="text" name="amount" class="form-control" placeholder="e.g. 123.45" required />
+            </div>
+            <div class="mb-2">
+              <label class="form-label">Observação</label>
+              <textarea name="note" class="form-control"></textarea>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+            <button class="btn btn-primary" type="submit">Adicionar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h1 class="modal-title fs-5" id="editModalLabel">Editar Transação</h1>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <form method="post" id="editForm">
+          <div class="modal-body">
+            <input type="hidden" name="id" id="edit_id">
+            <div class="mb-2">
+              <label class="form-label">Data</label>
+              <input type="date" name="date" id="edit_date" class="form-control" required />
+            </div>
+            <div class="mb-2">
+              <label class="form-label">Tipo</label>
+              <select name="type" id="edit_type" class="form-select">
+                <option value="expense">Despesa</option>
+                <option value="income">Receita</option>
+              </select>
+            </div>
+            <div class="mb-2">
+              <label class="form-label">Categoria</label>
+              <select name="category" id="edit_category" class="form-select">
+                {% for c in categories %}
+                  <option value="{{ c }}">{{ c }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="mb-2">
+              <label class="form-label">Descrição</label>
+              <input type="text" name="description" id="edit_description" class="form-control" />
+            </div>
+            <div class="mb-2">
+              <label class="form-label">Valor</label>
+              <input type="text" name="amount" id="edit_amount" class="form-control" placeholder="e.g. 123.45" required />
+            </div>
+            <div class="mb-2">
+              <label class="form-label">Observação</label>
+              <textarea name="note" id="edit_note" class="form-control"></textarea>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+            <button class="btn btn-primary" type="submit">Salvar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function(){
+      const editButtons = document.querySelectorAll('.edit-btn');
+      const editModal = new bootstrap.Modal(document.getElementById('editModal'));
+      editButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.getAttribute('data-id');
+          fetch(`/api/transaction/${id}`)
+            .then(res => res.json())
+            .then(data => {
+              // Preenche o formulário e ajusta a action
+              document.getElementById('edit_id').value = data.id;
+              document.getElementById('edit_date').value = data.date;
+              document.getElementById('edit_type').value = data.type;
+              document.getElementById('edit_category').value = data.category;
+              document.getElementById('edit_description').value = data.description;
+              document.getElementById('edit_amount').value = data.amount;
+              document.getElementById('edit_note').value = data.note;
+              document.getElementById('editForm').action = `/edit/${data.id}`;
+              editModal.show();
+            }).catch(err => alert('Erro ao carregar transação'));
+        });
+      });
+    });
+  </script>
+
+{% endblock %}

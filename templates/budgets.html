@@ -1,0 +1,195 @@
+{% extends "layout.html" %}
+{% set active_page = "budgets" %}
+
+{% block content %}
+<div class="card">
+    <div class="card-body">
+        <div class="row align-items-center mb-4">
+            <div class="col-12 col-md-5 d-flex flex-column flex-md-row align-items-stretch align-items-md-center gap-2">
+                <h5 class="card-title mb-0 text-center text-md-start">Definir Orçamentos para {{ current_month_str }}</h5>
+                
+                <button type="button" class="btn btn-primary mt-3 mt-md-0 ms-md-3" data-bs-toggle="modal" data-bs-target="#addBudgetModal">
+                    <i class="bi bi-plus-circle"></i> Adicionar novo orçamento
+                </button>
+            </div>
+
+            <div class="col-12 col-md-7 d-flex justify-content-md-end mt-3 mt-md-0">
+                <form method="get" class="d-flex flex-column flex-md-row gap-2 align-items-stretch align-items-md-center">
+                    <div class="btn-group">
+                        <button type="button" id="prevBudgetMonth" class="btn btn-outline-secondary" title="Mês Anterior">
+                            <i class="bi bi-chevron-left"></i>
+                        </button>
+                        <input type="month" name="month" id="budgetMonthInput" value="{{ current_month }}" class="form-control">
+                        <button type="button" id="nextBudgetMonth" class="btn btn-outline-secondary" title="Próximo Mês">
+                            <i class="bi bi-chevron-right"></i>
+                        </button>
+                    </div>
+                    <button type="submit" class="btn btn-secondary" title="Carregar">
+                        <i class="bi bi-calendar3"></i><span class="ms-1">Carregar</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+        <style>
+            /* Rolagem interna removida. A lista agora expande com a página. */
+            
+            /* Garante espaço entre o progress e o botão */
+            .delete-budget-btn { min-width: 36px; }
+        </style>
+
+        <form method="post" id="budgetForm">
+            <input type="hidden" name="month" value="{{ current_month }}">
+
+            <div class="budget-list-wrapper">
+                {% for item in budget_data %}
+                <div class="row g-3 align-items-center budget-item-row">
+                    <div class="col-md-3">
+                        <label class="form-label"><strong>{{ item.category_name }}</strong></label>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="input-group">
+                            <span class="input-group-text">R$</span>
+                            <input type="text" name="budget_{{ item.category_id }}" class="form-control money-input"
+                                        value="{{ '{:,.2f}'.format(item.budgeted|default(0)).replace(',', '.') if (item.budgeted|default(0)) > 0 else '' }}"
+                                         placeholder="0,00"
+                                         data-previous="{{ '{:,.2f}'.format(item.budgeted|default(0)).replace(',', '.') if (item.budgeted|default(0)) > 0 else '' }}">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        {% set spent = item.spent %}
+                        {% set budgeted = item.budgeted if item.budgeted > 0 else 1 %}
+                        {% set percentage = (spent / budgeted * 100) if budgeted > 0 else 0 %}
+
+                        <div class="d-flex justify-content-between mb-1">
+                            <small>Gasto: R$ {{ '{:,.2f}'.format(spent|default(0)).replace(',', '.') }}</small>
+                            <small>Orçado: R$ {{ '{:,.2f}'.format(item.budgeted|default(0)).replace(',', '.') }}</small>
+                        </div>
+
+                        {% if item.budgeted > 0 %}
+                            {% set p_color = 'success' %}
+                            {% if percentage > 75 %}{% set p_color = 'warning' %}{% endif %}
+                            {% if percentage > 100 %}{% set p_color = 'danger' %}{% endif %}
+                            {% set percentage_display = 100 if percentage > 100 else percentage %}
+
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="flex-grow-1">
+                                    <div class="progress" style="height: 20px;">
+                                        <div class="progress-bar bg-{{ p_color }}" role="progressbar" aria-valuenow="{{ percentage }}"
+                                                 aria-valuemin="0" aria-valuemax="100" style="width:{{ '%.0f'|format(percentage_display) }}%">
+                                            {{ '{:.0f}'.format(percentage) }}%
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <button type="button" class="btn btn-sm btn-outline-danger delete-budget-btn"
+                                                    data-category-id="{{ item.category_id }}" data-month="{{ current_month }}" title="Remover orçamento">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="flex-grow-1">
+                                    <div class="progress" style="height: 20px;">
+                                        <div class="progress-bar bg-light text-dark" role="progressbar" style="width: 100%">
+                                            <small>Gasto R$ {{ '{:,.2f}'.format(spent|default(0)).replace(',', '.') }} (Sem orçamento)</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <button type="button" class="btn btn-sm btn-outline-danger delete-budget-btn"
+                                            data-category-id="{{ item.category_id }}" data-month="{{ current_month }}" title="Remover orçamento">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <hr>
+            <button type="submit" class="btn btn-primary"><i class="bi bi-save"></i> Salvar Orçamentos</button>
+        </form>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                // Formatação de valores monetários
+                const moneyInputs = document.querySelectorAll('.money-input');
+                moneyInputs.forEach(input => {
+                    input.addEventListener('blur', function(e) {
+                        let value = e.target.value.replace(/[^\d,]/g, '').replace(',', '.');
+                        if (value) {
+                            value = parseFloat(value).toFixed(2);
+                            e.target.value = value;
+                        }
+                    });
+                });
+
+                // Confirmação antes de enviar o formulário
+                const form = document.getElementById('budgetForm');
+                form.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    let changes = false;
+                    moneyInputs.forEach(input => {
+                        if (input.value !== input.dataset.previous) changes = true;
+                    });
+                    if (!changes) { alert('Nenhuma alteração detectada nos orçamentos.'); return; }
+                    if (confirm('Confirma as alterações nos orçamentos?')) form.submit();
+                });
+
+                // Handler para excluir orçamento sem utilizar formulário aninhado
+                document.querySelectorAll('.delete-budget-btn').forEach(btn => {
+                    btn.addEventListener('click', function(e){
+                        e.preventDefault();
+                        if (!confirm('Remover orçamento desta categoria para o mês?')) return;
+                        
+                        const category_id = this.dataset.categoryId || this.getAttribute('data-category-id');
+                        const month = this.dataset.month || this.getAttribute('data-month');
+                        
+                        // Criar um formulário temporário
+                        const form = document.createElement('form');
+                        form.method = 'POST';
+                        
+                        // --- CORREÇÃO AQUI ---
+                        // A rota está em um blueprint 'budgets', então o url_for precisa do prefixo.
+                        form.action = "{{ url_for('budgets.delete_budget_route') }}";
+                        
+                        // Adicionar campos ocultos
+                        const catInput = document.createElement('input');
+                        catInput.type = 'hidden';
+                        catInput.name = 'category_id';
+                        catInput.value = category_id;
+                        form.appendChild(catInput);
+                        
+                        const monthInput = document.createElement('input');
+                        monthInput.type = 'hidden';
+                        monthInput.name = 'month';
+                        monthInput.value = month;
+                        form.appendChild(monthInput);
+                        
+                        // Adicionar ao documento e enviar
+                        document.body.appendChild(form);
+                        form.submit();
+                    });
+                });
+
+                // Pequeno script para prev/next no orçamento
+                const input = document.getElementById('budgetMonthInput');
+                document.getElementById('prevBudgetMonth').addEventListener('click', ()=>{
+                    const d = new Date(input.value + '-01'); d.setMonth(d.getMonth()-1);
+                    input.value = d.toISOString().slice(0,7);
+                });
+                document.getElementById('nextBudgetMonth').addEventListener('click', ()=>{
+                    const d = new Date(input.value + '-01'); d.setMonth(d.getMonth()+1);
+                    input.value = d.toISOString().slice(0,7);
+                });
+            });
+        </script>
+
+            </div>
+</div>
+
+{% endblock %}

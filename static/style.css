@@ -1,0 +1,733 @@
+/* --- 1. TEMA "SLATE" (Profissional Moderno) --- */
+:root {
+  /* FUNDOS (Paleta de Ardosia/Slate) */
+  --primary-bg: #111827; /* Azul-ardósia muito escuro (Corpo) */
+  --secondary-bg: #1f2937; /* Ardosia mais claro (Card/Sidebar) */
+  --border-color: rgba(255, 255, 255, 0.1);
+  --card-hover: #374151; /* Ardosia médio */
+
+  /* ACENTO (Azul Padrão, mas limpo) */
+  --accent-color: #3b82f6; /* Azul um pouco mais brilhante */
+  --accent-color-light: #60a5fa;
+  
+  /* Cores de Texto */
+  --text-primary: #f9fafb; /* Branco mais suave */
+  --text-secondary: #9ca3af; /* Cinza suave */
+  --text-muted: #6b7280;
+  
+  /* SOMBRAS (Sutis) */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+
+  /* Fonte */
+  --font-family-sans-serif: 'Inter', sans-serif;
+
+  /* Cores de Ícone (Restauradas) */
+  --icon-blue: #3b82f6;
+  --icon-purple: #a855f7;
+  --icon-orange: #f97316;
+  --icon-yellow: #eab308;
+  --icon-green: #22c55e;
+  --icon-red: #ef4444;
+  --icon-grey: #6b7280;
+}
+
+/* --- 2. LAYOUT GERAL --- */
+body {
+  background-color: var(--primary-bg);
+  font-family: var(--font-family-sans-serif);
+}
+
+/* SIDEBAR (OFFCANVAS) */
+#sidebar {
+  background-color: var(--secondary-bg);
+  border-right: 1px solid var(--border-color); /* Borda sutil */
+  transition: transform 0.3s ease-in-out;
+  display: flex;
+  flex-direction: column;
+}
+
+#sidebar .offcanvas-body {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1; 
+  overflow-y: auto; 
+}
+
+#sidebar .offcanvas-header {
+  border-bottom: 1px solid var(--border-color);
+  padding: 1.25rem;
+}
+#sidebar .btn-close {
+  filter: invert(1) grayscale(100) brightness(200%); 
+}
+
+#main-content {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.content-wrapper {
+  width: 100%;
+  max-width: 100%;
+  padding: 1.5rem; 
+  flex-grow: 1;
+}
+
+/* === REGRAS DE DESKTOP === */
+@media (min-width: 992px) {
+  body {
+    display: flex;
+    height: 100vh;
+    overflow: hidden; 
+  }
+  #sidebar.offcanvas-lg {
+    position: static;
+    transform: none;
+    visibility: visible !important;
+    width: 260px; 
+    height: 100vh;
+  }
+  #main-content {
+    height: 100vh;
+    overflow-y: auto;
+    min-height: auto;
+  }
+  #sidebar .offcanvas-header {
+    display: none;
+  }
+  .content-wrapper {
+    padding: 1.5rem 2.5rem;
+  }
+  #sidebar .offcanvas-body {
+    padding: 0; 
+  }
+}
+/* === FIM DAS REGRAS DE DESKTOP === */
+
+
+/* ================================================================
+  --- 3. COMPONENTES DE NAVEGAÇÃO (Sidebar) ---
+================================================================
+*/
+
+#sidebar .offcanvas-body > .sidebar-brand {
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -1px;
+  color: var(--text-primary);
+  text-decoration: none;
+  padding: 0.5rem 0.25rem;
+  margin: 1.25rem 1.25rem 1.5rem 1.25rem; 
+  display: none;
+}
+@media (min-width: 992px) {
+  #sidebar .offcanvas-body > .sidebar-brand {
+    display: flex;
+  }
+}
+
+#sidebar .offcanvas-header .sidebar-brand {
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -1px;
+  color: var(--text-primary);
+  text-decoration: none;
+  padding: 0;
+  margin: 0;
+}
+.sidebar-brand i {
+  color: var(--accent-color);
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem; 
+  padding-left: 1.25rem;
+  padding-right: 1.25rem;
+}
+
+/* ==== MUDANÇA: Links da Sidebar (Sutil) ==== */
+.sidebar-nav .nav-link {
+  display: flex;
+  align-items: center;
+  padding: 10px 12px; /* Mais altura */
+  color: var(--text-secondary); 
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-radius: 0.5rem; /* 8px */
+  text-decoration: none;
+  background-color: transparent; 
+  border: none;
+}
+
+.sidebar-nav .nav-link:hover {
+  background-color: var(--card-hover);
+  color: var(--text-primary);
+}
+
+/* ==== MUDANÇA: Estado Ativo (Fundo sutil) ==== */
+.sidebar-nav .nav-link.active {
+  background-color: rgba(59, 130, 246, 0.1); /* Fundo azul 10% */
+  color: var(--accent-color-light); /* Texto azul claro */
+  font-weight: 600; 
+}
+
+/* Roxo (Lançamentos) */
+.sidebar-nav .nav-link.active:has(.icon-purple) {
+  background-color: rgba(168, 85, 247, 0.1); /* Fundo Roxo 10% */
+  color: var(--icon-purple);
+}
+
+/* Laranja (Orçamentos) */
+.sidebar-nav .nav-link.active:has(.icon-orange) {
+  background-color: rgba(249, 115, 22, 0.1); /* Fundo Laranja 10% */
+  color: var(--icon-orange);
+}
+
+/* Amarelo (Salário / Mudar Senha) */
+.sidebar-nav .nav-link.active:has(.icon-yellow) {
+  background-color: rgba(234, 179, 8, 0.1); /* Fundo Amarelo 10% */
+  color: var(--icon-yellow);
+}
+
+/* Verde (Cofrinho) */
+.sidebar-nav .nav-link.active:has(.icon-green) {
+  background-color: rgba(34, 197, 94, 0.1); /* Fundo Verde 10% */
+  color: var(--icon-green);
+}
+
+/* Vermelho (Recebíveis / Sair) */
+.sidebar-nav .nav-link.active:has(.icon-red) {
+  background-color: rgba(239, 68, 68, 0.1); /* Fundo Vermelho 10% */
+  color: var(--icon-red);
+}
+
+
+/* ==== MUDANÇA: Ícones Coloridos Restaurados ==== */
+.sidebar-icon {
+  border-radius: 0.5rem; /* 8px */
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  font-size: 1rem; 
+  flex-shrink: 0;
+  margin-right: 12px; 
+  /* Fundo sutil para todos */
+  background: var(--primary-bg);
+  border: 1px solid var(--border-color);
+}
+.sidebar-icon i { color: var(--icon-grey); }
+
+/* Aplica as cores! */
+.icon-blue { background: rgba(59, 130, 246, 0.1); border-color: rgba(59, 130, 246, 0.3); }
+.icon-blue i { color: var(--icon-blue); }
+.icon-purple { background: rgba(168, 85, 247, 0.1); border-color: rgba(168, 85, 247, 0.3); }
+.icon-purple i { color: var(--icon-purple); }
+.icon-orange { background: rgba(249, 115, 22, 0.1); border-color: rgba(249, 115, 22, 0.3); }
+.icon-orange i { color: var(--icon-orange); }
+.icon-yellow { background: rgba(234, 179, 8, 0.1); border-color: rgba(234, 179, 8, 0.3); }
+.icon-yellow i { color: var(--icon-yellow); }
+.icon-green { background: rgba(34, 197, 94, 0.1); border-color: rgba(34, 197, 94, 0.3); }
+.icon-green i { color: var(--icon-green); }
+.icon-red { background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.3); }
+.icon-red i { color: var(--icon-red); }
+.icon-grey { background: var(--primary-bg); border-color: var(--border-color); }
+
+
+/* ================================================================
+  --- 4. COMPONENTES PRINCIPAIS (Atualizados) ---
+================================================================
+*/
+
+/* Cabeçalho superior */
+.header-bar {
+  background-color: var(--secondary-bg);
+  border-bottom: 1px solid var(--border-color);
+  padding: 1rem 2.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+@media (max-width: 991.98px) {
+  .header-bar {
+    padding: 0.75rem 1rem; 
+    position: sticky; 
+    top: 0;
+    z-index: 1020;
+    background-color: var(--secondary-bg); /* Fundo card */
+  }
+}
+.user-email {
+  color: var(--text-secondary);
+}
+
+/* Animação de Entrada */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.content-wrapper > * {
+  animation: fadeInUp 0.4s ease-out forwards;
+}
+
+/* ==== MUDANÇA: Cards (Sutis) ==== */
+.card, .dashboard-card {
+  background-color: var(--secondary-bg);
+  backdrop-filter: none; 
+  -webkit-backdrop-filter: none;
+  border: 1px solid var(--border-color); /* Borda sutil */
+  border-radius: 0.75rem; /* 12px */
+  box-shadow: var(--shadow-sm); /* Sombra muito leve */
+  transition: border-color 0.3s ease, transform 0.3s ease;
+}
+
+.card:hover, .dashboard-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.2); 
+}
+
+/* ==== MUDANÇA: Botões (Sutis) ==== */
+.btn {
+  border-radius: 0.5rem; /* 8px (não mais pílula) */
+  font-weight: 600; 
+  padding: 0.6rem 1.2rem; 
+  border: none; 
+  transition: all 0.2s ease;
+}
+.btn-sm {
+  border-radius: 0.5rem;
+  padding: 0.25rem 0.75rem;
+  font-weight: 500;
+}
+
+/* --- INÍCIO DA ATUALIZAÇÃO (Tons Pastéis) --- */
+
+/* Botão Primário (Azul) */
+.btn-primary {
+  background-color: rgba(59, 130, 246, 0.1) !important;
+  color: var(--icon-blue) !important;
+  border: 1px solid rgba(59, 130, 246, 0.2) !important;
+  box-shadow: none;
+  background-image: none;
+}
+.btn-primary:hover {
+  transform: translateY(-2px);
+  background-color: var(--icon-blue) !important; /* Solid on hover */
+  color: #fff !important;
+  border-color: var(--icon-blue) !important;
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.2);
+}
+
+/* --- FIM DA ATUALIZAÇÃO --- */
+
+
+/* Botão Secundário (Ghost) */
+.btn-secondary, .btn-outline-secondary {
+  background-color: var(--card-hover);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+}
+.btn-secondary:hover, .btn-outline-secondary:hover {
+  background-color: #4B5563;
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+
+/* ==== MUDANÇA: Formulários (Modernos) ==== */
+.form-control, .form-select, .input-group-text {
+  background-color: var(--primary-bg); /* Fundo do corpo */
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem; /* 8px */
+  color: var(--text-primary);
+  padding: 0.6rem 1rem;
+}
+.form-control[type="date"] {
+  border-radius: 0.5rem;
+}
+/* Foco (azul) */
+.form-control:focus {
+  background-color: var(--primary-bg);
+  border-color: var(--accent-color); 
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25); /* Sombra azul */
+  color: var(--text-primary);
+}
+.form-control::placeholder {
+  color: var(--text-muted);
+}
+.input-group-text {
+  background-color: var(--secondary-bg);
+  border-color: var(--border-color);
+}
+.input-group-text:first-child {
+  border-top-left-radius: 0.5rem;
+  border-bottom-left-radius: 0.5rem;
+}
+.input-group > .form-control {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+
+/* Alertas de Mensagem */
+.alert {
+  border-radius: 0.75rem; 
+  animation: fadeInUp 0.4s ease;
+  background-color: var(--secondary-bg);
+  border-width: 1px;
+}
+/* Cores dos alertas (já ok) */
+
+
+/* Tabelas */
+.table {
+  --bs-table-bg: transparent;
+  --bs-table-border-color: var(--border-color);
+  --bs-table-striped-bg: rgba(255, 255, 255, 0.02);
+  vertical-align: middle;
+}
+.table > tbody > tr > * {
+  border-bottom-width: 1px;
+}
+.table-hover > tbody > tr:hover > * {
+  background-color: var(--card-hover);
+  color: var(--text-primary);
+}
+
+/* Modals */
+.modal-content {
+  background-color: var(--secondary-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 1rem; 
+  box-shadow: var(--shadow-lg);
+}
+.modal-header { border-bottom-color: var(--border-color); }
+.modal-footer { border-top-color: var(--border-color); }
+
+/* Listas roláveis (Dashboard) */
+#budgetsSummary, #recentTx, #calendar {
+  flex: 1; 
+  min-height: 0; 
+  padding-right: 0.5rem; 
+}
+/* Remove a rolagem interna de Orçamentos */
+.budget-list-wrapper {
+  overflow: visible;
+  max-height: none;
+}
+
+
+/* Container do Gráfico */
+.chart-container {
+  flex: 1;
+  position: relative; 
+  min-height: 0; 
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: var(--primary-bg); }
+::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* Footer */
+footer {
+  padding: 1.5rem 0;
+  background-color: transparent;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  border-top: 1px solid var(--border-color);
+  margin-top: 2rem;
+}
+
+
+/* ================================================================
+  --- 5. MELHORIAS MOBILE (FAB) ---
+================================================================
+*/
+#fab {
+  position: fixed; 
+  bottom: 20px;
+  right: 20px;
+  width: 56px;
+  height: 56px;
+  /* ==== MUDANÇA: Botão Flutuante (Azul) ==== */
+  background-color: var(--accent-color);
+  color: #fff;
+  font-weight: 600;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.75rem; 
+  text-decoration: none;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+  z-index: 1030; 
+  transition: all 0.2s ease-out;
+}
+
+#fab:hover {
+  transform: scale(1.05) translateY(-2px);
+  background-color: var(--accent-color-light);
+  color: #fff;
+  box-shadow: 0 10px 20px rgba(59, 130, 246, 0.3);
+}
+
+
+/* ================================================================
+  --- 6. MELHORIA TABELA RESPONSIVA ---
+================================================================
+*/
+@media (max-width: 767.98px) {
+  .table-mobile-cards thead {
+    display: none;
+  }
+  .table-mobile-cards,
+  .table-mobile-cards tbody,
+  .table-mobile-cards tr,
+  .table-mobile-cards td {
+    display: block;
+    width: 100%;
+  }
+  /* ==== MUDANÇA: Cards da Tabela (Slate) ==== */
+  .table-mobile-cards tr {
+    margin-bottom: 1rem;
+    border: 1px solid var(--border-color);
+    background-color: var(--secondary-bg);
+    border-radius: 0.75rem; 
+    overflow: hidden; 
+  }
+  
+  .table-striped > tbody > tr:nth-of-type(odd) > * {
+    --bs-table-accent-bg: var(--bs-table-striped-bg);
+  }
+  .table-mobile-cards td {
+    text-align: right; 
+    padding: 0.75rem 1rem; 
+    border-bottom: 1px solid var(--border-color); 
+  }
+  .table-mobile-cards tr td:last-child {
+    border-bottom: none; 
+  }
+  .table-mobile-cards td::before {
+    content: attr(data-label); 
+    float: left; 
+    font-weight: 600;
+    color: var(--text-secondary); 
+    text-align: left;
+    padding-right: 1rem; 
+  }
+  .table-mobile-cards td[data-label="Ações"] {
+     text-align: right;
+  }
+   .table-responsive {
+    overflow-x: hidden;
+   }
+}
+
+/* ================================================================
+  --- 7. MELHORIA ORÇAMENTOS RESPONSIVO ---
+================================================================
+*/
+@media (max-width: 767.98px) {
+  /* ==== MUDANÇA: Cards de Orçamento (Slate) ==== */
+  .budget-item-row {
+    border: 1px solid var(--border-color);
+    background-color: var(--secondary-bg);
+    border-radius: 0.75rem;
+    padding: 1rem;
+    --bs-gutter-x: 0;
+    margin-top: 1rem; 
+  }
+  .budget-item-row > [class*="col-"] {
+      margin-bottom: 0.75rem;
+  }
+  .budget-item-row > [class*="col-"]:last-child {
+      margin-bottom: 0;
+  }
+  .budget-item-row .input-group {
+    max-width: 250px;
+  }
+  .budget-item-row label.form-label {
+    text-align: left;
+    width: 100%;
+  }
+}
+
+/* ================================================================
+  --- 8. CORREÇÕES DE CORES DE STATUS (ATUALIZADO PARA PASTEL) ---
+================================================================
+*/
+
+/* --- SUCESSO (VERDE - Cofrinho) --- */
+.text-bg-success,
+.badge.text-bg-success,
+.btn-success,
+.alert-success,
+.progress-bar.bg-success {
+  background-color: rgba(34, 197, 94, 0.1) !important;
+  color: var(--icon-green) !important;
+  border: 1px solid rgba(34, 197, 94, 0.2) !important;
+}
+.btn-success:hover {
+  background-color: var(--icon-green) !important;
+  color: #fff !important;
+}
+.btn-outline-success { border: 1px solid var(--icon-green); color: var(--icon-green); }
+.btn-outline-success:hover { background-color: var(--icon-green); color: #fff; }
+.text-success, .border-success { color: var(--icon-green) !important; border-color: var(--icon-green) !important; }
+
+/* --- PERIGO (VERMELHO - Recebíveis) --- */
+.text-bg-danger,
+.badge.text-bg-danger,
+.btn-danger,
+.alert-danger,
+.progress-bar.bg-danger {
+  background-color: rgba(239, 68, 68, 0.1) !important;
+  color: var(--icon-red) !important;
+  border: 1px solid rgba(239, 68, 68, 0.2) !important;
+}
+.btn-danger:hover {
+  background-color: var(--icon-red) !important;
+  color: #fff !important;
+}
+.btn-outline-danger { border: 1px solid var(--icon-red); color: var(--icon-red); }
+.btn-outline-danger:hover { background-color: var(--icon-red); color: #fff; }
+.text-danger, .border-danger { color: var(--icon-red) !important; border-color: var(--icon-red) !important; }
+
+/* --- AVISO (LARANJA - Orçamentos) --- */
+.text-bg-warning,
+.badge.text-bg-warning,
+.progress-bar.bg-warning,
+.btn-warning,
+.alert-warning {
+  background-color: rgba(249, 115, 22, 0.1) !important;
+  color: var(--icon-orange) !important;
+  border: 1px solid rgba(249, 115, 22, 0.2) !important;
+}
+.btn-warning:hover {
+  background-color: var(--icon-orange) !important;
+  color: #fff !important;
+}
+.btn-outline-warning { border: 1px solid var(--icon-orange); color: var(--icon-orange); }
+.btn-outline-warning:hover { background-color: var(--icon-orange); color: #fff; }
+.text-warning, .border-warning { color: var(--icon-orange) !important; border-color: var(--icon-orange) !important; }
+
+/* --- INFORMAÇÃO (ROXO - Lançamentos) --- */
+.text-bg-info,
+.badge.text-bg-info,
+.btn-info,
+.alert-info,
+.progress-bar.bg-info {
+  background-color: rgba(168, 85, 247, 0.1) !important;
+  color: var(--icon-purple) !important;
+  border: 1px solid rgba(168, 85, 247, 0.2) !important;
+}
+.btn-info:hover {
+  background-color: var(--icon-purple) !important;
+  color: #fff !important;
+}
+.btn-outline-info { border: 1px solid var(--icon-purple); color: var(--icon-purple); }
+.btn-outline-info:hover { background-color: var(--icon-purple); color: #fff; }
+.text-info, .border-info { color: var(--icon-purple) !important; border-color: var(--icon-purple) !important; }
+
+/* --- PRIMÁRIO (NEUTRO/CARD) --- */
+/* Cor "primary" (azul) vira "neutra" para cards */
+.text-bg-primary {
+  background-color: var(--secondary-bg) !important;
+  border: 1px solid var(--border-color);
+  color: var(--text-primary) !important;
+}
+
+
+/* ================================================================
+  --- 9. ESTILOS DO TUTORIAL (NOVO) ---
+================================================================
+*/
+.tutorial-step {
+  display: none; /* Esconde todas as etapas por padrão */
+  animation: fadeIn 0.5s ease; /* Animação de entrada */
+}
+
+.tutorial-step.active {
+  display: block; /* Mostra apenas a etapa ativa */
+}
+
+.tutorial-step h4 {
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+/* Força os ícones do tutorial a terem o fundo e a cor (do tema 'Slate') */
+.tutorial-step .sidebar-icon {
+  border-radius: 0.5rem;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  flex-shrink: 0;
+  margin-right: 12px;
+  background: var(--primary-bg);
+  border: 1px solid var(--border-color);
+}
+.tutorial-step .icon-blue { background: rgba(59, 130, 246, 0.1); border-color: rgba(59, 130, 246, 0.3); }
+.tutorial-step .icon-blue i { color: var(--icon-blue); }
+.tutorial-step .icon-purple { background: rgba(168, 85, 247, 0.1); border-color: rgba(168, 85, 247, 0.3); }
+.tutorial-step .icon-purple i { color: var(--icon-purple); }
+.tutorial-step .icon-orange { background: rgba(249, 115, 22, 0.1); border-color: rgba(249, 115, 22, 0.3); }
+.tutorial-step .icon-orange i { color: var(--icon-orange); }
+.tutorial-step .icon-yellow { background: rgba(234, 179, 8, 0.1); border-color: rgba(234, 179, 8, 0.3); }
+.tutorial-step .icon-yellow i { color: var(--icon-yellow); }
+.tutorial-step .icon-green { background: rgba(34, 197, 94, 0.1); border-color: rgba(34, 197, 94, 0.3); }
+.tutorial-step .icon-green i { color: var(--icon-green); }
+.tutorial-step .icon-red { background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.3); }
+.tutorial-step .icon-red i { color: var(--icon-red); }
+
+
+.tutorial-progress-dots .tutorial-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: var(--card-hover);
+  border: 1px solid var(--border-color);
+  transition: background-color 0.3s ease;
+}
+
+.tutorial-progress-dots .tutorial-dot.active {
+  background-color: var(--accent-color);
+  border-color: var(--accent-color);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ================================================================
+  --- 10. ESTILOS DE VISIBILIDADE (NOVO) ---
+================================================================
+*/
+/* Este é o único estilo necessário. 
+   O JS faz o trabalho de salvar o valor original e substiuir por asteriscos.
+   Este estilo apenas formata os asteriscos.
+*/
+.currency-value .text-muted {
+  font-family: monospace;
+  font-weight: 600;
+  color: var(--text-muted) !important;
+}

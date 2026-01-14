@@ -1,0 +1,197 @@
+{% extends "layout.html" %}
+{% set active_page = "dashboard" %}
+
+{% block content %}
+
+  {# Salário / Benefícios - banner destacado (Mantido no topo) #}
+  {% if salary_info %}
+  <div class="alert alert-transparent d-flex align-items-center mb-4" style="border:1px solid rgba(13,110,253,0.12); background: linear-gradient(90deg, rgba(13,110,253,0.03), transparent);">
+    <i class="bi bi-cash-coin me-3 fs-3" style="color:var(--accent-color)"></i>
+    <div class="flex-grow-1">
+      <strong>Salário Líquido:</strong> <span class="currency-value">R$ {{ '{:,.2f}'.format(salary_info.salary|default(0)).replace(',','.') }}</span>
+      {% if salary_info.bonus and salary_info.bonus > 0 %}
+        &nbsp;|&nbsp; <strong>Bonificações:</strong> <span class="currency-value">R$ {{ '{:,.2f}'.format(salary_info.bonus|default(0)).replace(',','.') }}</span>
+      {% endif %}
+    </div>
+    <a href="{{ url_for('salary.index') }}" class="btn btn-outline-primary btn-sm"><i class="bi bi-pencil"></i> Editar</a>
+  </div>
+  {% endif %}
+
+  <div class="row g-3">
+
+    <div class="col-lg-8 d-flex flex-column gap-3">
+
+      <div class="dashboard-card p-3 d-flex flex-column" style="min-height: 300px;">
+        <h6 class="card-subtitle mb-2">Despesas por Categoria</h6>
+        <div class="chart-container">
+          <canvas id="chartByCategory"></canvas>
+        </div>
+        <div class="mt-2 small text-muted d-flex gap-2 flex-wrap">
+          {% for b in budgets_list %}
+            <div class="d-flex align-items-center">
+              <span class="badge bg-secondary me-2">{{ b.category_name }}</span>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="dashboard-card p-3 d-flex flex-column h-100">
+        <h6 class="card-subtitle mb-3"><i class="bi bi-clock-history me-2"></i>Lançamentos Recentes</h6>
+        <div id="recentTx">
+          {% if recent_transactions %}
+            <ul class="list-unstyled mb-0">
+              {% for t in recent_transactions %}
+                <li class="d-flex justify-content-between mb-2">
+                  <div><small class="text-muted">{{ t.date }}</small><br>{{ t.description }}</div>
+                  <div class="text-nowrap fw-medium ms-3"><span class="currency-value">R$ {{ '{:,.2f}'.format(t.amount|default(0)).replace(',','.') }}</span></div>
+                </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <div class="text-muted">Sem lançamentos recentes.</div>
+          {% endif %}
+        </div>
+      </div>
+
+    </div>
+
+    <div class="col-lg-4 d-flex flex-column gap-3">
+
+      <div id="card-income" class="dashboard-card border-success p-3 d-flex flex-column justify-content-between">
+        <div>
+          <h6 class="card-subtitle text-success">Receita do Mês</h6>
+          <h3 class="card-title"><span class="currency-value">R$ {{ '{:,.2f}'.format(month_income|default(0)).replace(',','.') }}</span></h3>
+        </div>
+        <div class="d-flex align-items-center text-success small">
+          <i class="bi bi-arrow-up-circle-fill me-2"></i>
+          Entradas
+        </div>
+      </div>
+
+      <div id="card-expenses" class="dashboard-card border-danger p-3 d-flex flex-column justify-content-between">
+        <div>
+          <h6 class="card-subtitle text-danger">Despesas do Mês</h6>
+          <h3 class="card-title"><span class="currency-value">R$ {{ '{:,.2f}'.format(month_expenses|default(0)).replace(',','.') }}</span></h3>
+        </div>
+        <div class="d-flex align-items-center text-danger small">
+          <i class="bi bi-arrow-down-circle-fill me-2"></i>
+          Saídas
+        </div>
+      </div>
+
+      <div id="card-balance" class="dashboard-card p-3 d-flex flex-column justify-content-between">
+        <div>
+          <h6 class="card-subtitle text-muted">Saldo (Filtro)</h6>
+          <h3 class="card-title"><span class="currency-value">R$ {{ '{:,.2f}'.format(month_balance|default(0)).replace(',','.') }}</span></h3>
+        </div>
+        <div class="d-flex align-items-center small text-muted">
+          <i class="bi bi-cash-stack me-2"></i>
+          Visão rápida
+        </div>
+      </div>
+
+      <div class="dashboard-card p-3 d-flex flex-column h-100">
+        <h6 class="card-subtitle mb-3"><i class="bi bi-piggy-bank-fill me-2"></i>Orçamentos</h6>
+        <div id="budgetsSummary">
+          {% if budgets_list %}
+            <ul class="list-unstyled mb-0">
+              {% for b in budgets_list %}
+                <li class="d-flex justify-content-between mb-2">
+                  <div class="text-truncate">{{ b.category_name }}</div>
+                  <div class="text-nowrap"><span class="currency-value">R$ {{ '{:,.2f}'.format(b.spent|default(0)).replace(',','.') }}</span> / <strong><span class="currency-value">R$ {{ '{:,.2f}'.format(b.budgeted|default(0)).replace(',','.') }}</span></strong></div>
+                </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <div class="text-muted">Nenhum orçamento configurado.</div>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="dashboard-card p-3 d-flex flex-column h-100">
+        <h6 class="card-subtitle mb-3"><i class="bi bi-calendar-event me-2"></i>Calendário</h6>
+        <div id="calendar"></div>
+      </div>
+
+    </div>
+  </div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.js'></script>
+<script type="application/json" id="expenseDataJson">{{ expense_data_json|safe }}</script>
+<script type="application/json" id="dailySummaryJson">{{ daily_summary_json|safe }}</script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    window._dashboardCharts = window._dashboardCharts || {};
+    try {
+        const byCatCtx = document.getElementById('chartByCategory');
+        const expenseJson = document.getElementById('expenseDataJson')?.textContent;
+        const dailyJson = document.getElementById('dailySummaryJson')?.textContent;
+        const expenses = expenseJson ? JSON.parse(expenseJson) : null;
+        const daily = dailyJson ? JSON.parse(dailyJson) : null;
+
+        if (byCatCtx && expenses) {
+            
+            // --- INÍCIO DA ATUALIZAÇÃO DE COR ---
+            // Buscar as cores do :root do CSS
+            const style = getComputedStyle(document.documentElement);
+            const colorBlue = style.getPropertyValue('--icon-blue').trim() || '#3b82f6';
+            const colorGreen = style.getPropertyValue('--icon-green').trim() || '#22c55e';
+            const colorRed = style.getPropertyValue('--icon-red').trim() || '#ef4444';
+            const colorOrange = style.getPropertyValue('--icon-orange').trim() || '#f97316';
+            const colorPurple = style.getPropertyValue('--icon-purple').trim() || '#a855f7';
+            const colorGrey = style.getPropertyValue('--icon-grey').trim() || '#6b7280';
+            const colorYellow = style.getPropertyValue('--icon-yellow').trim() || '#eab308';
+
+            // Paleta de cores para o gráfico
+            const chartColors = [colorBlue, colorGreen, colorRed, colorOrange, colorPurple, colorYellow, colorGrey];
+            // --- FIM DA ATUALIZAÇÃO DE COR ---
+
+            const catTotals = {};
+            expenses.forEach(e=> { catTotals[e.category || 'Sem categoria'] = (catTotals[e.category || 'Sem categoria']||0) + Math.abs(e.total || e.total || e.amount || 0); });
+            const labels = Object.keys(catTotals);
+            const data = Object.values(catTotals);
+            
+            const catChart = new Chart(byCatCtx.getContext('2d'), { 
+                type: 'doughnut', 
+                data: { 
+                    labels, 
+                    datasets: [{ 
+                        data, 
+                        backgroundColor: chartColors // <-- USA A NOVA PALETA
+                    }] 
+                }, 
+                options: { 
+                    responsive:true, 
+                    maintainAspectRatio:false, 
+                    plugins:{
+                        legend:{
+                            position:'bottom',
+                            labels: {
+                                // Garante que o texto da legenda também seja legível
+                                color: style.getPropertyValue('--text-secondary').trim() || '#9ca3af'
+                            }
+                        }
+                    } 
+                } 
+            });
+            window._dashboardCharts.byCategory = catChart;
+        }
+    } catch(e){ console.warn('Charts init error', e); }
+
+    try {
+    const calendarEl = document.getElementById('calendar');
+    if (calendarEl && typeof FullCalendar !== 'undefined'){
+      // Passa o mês atual para a API para popular o calendário
+      const monthParam = '{{ current_month }}' || '';
+      const eventsUrl = monthParam ? `/api/calendar?month=${monthParam}` : '/api/calendar';
+      const calendar = new FullCalendar.Calendar(calendarEl, { initialView: 'dayGridMonth', height: 300, events: eventsUrl });
+      calendar.render();
+    }
+    } catch(e){ console.warn('Calendar init error', e); }
+});
+</script>
+{% endblock %}

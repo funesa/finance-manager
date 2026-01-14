@@ -1,0 +1,52 @@
+{% extends "layout.html" %}
+{% set active_page = "salary" %}
+
+{% block content %}
+<div class="row g-4">
+  <div class="col-lg-7">
+    <div class="card">
+      <div class="card-body p-4 p-md-5">
+        <h4 class="card-title mb-4"><i class="bi bi-cash-coin me-2"></i> Salário e Benefícios Fixos</h4>
+        <form method="post">
+          <div class="mb-3">
+            <label for="salary" class="form-label">Salário Líquido</label>
+            <div class="input-group">
+              <span class="input-group-text">R$</span>
+              <input type="number" step="0.01" min="0" class="form-control" id="salary" name="salary" value="{{ salary or '' }}" required>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label for="bonus" class="form-label">Bonificações/Média de Benefícios</label>
+            <div class="input-group">
+              <span class="input-group-text">R$</span>
+              <input type="number" step="0.01" min="0" class="form-control" id="bonus" name="bonus" value="{{ bonus or '' }}">
+            </div>
+            <div class="form-text">Inclua aqui benefícios fixos, médias de comissão, etc.</div>
+          </div>
+          <button type="submit" class="btn btn-primary">
+            <i class="bi bi-save me-1"></i> Salvar Dados
+          </button>
+        </form>
+        {% if updated %}
+          <div class="alert alert-success mt-3" role="alert">
+            Dados atualizados com sucesso!
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-5">
+    <div class="dashboard-card p-0">
+      <div class="card-body p-4 p-md-5 text-center">
+        <h6 class="card-subtitle mb-3">SALÁRIO LÍQUIDO</h6>
+        <h2 class="card-title mb-4 currency-value" style="font-size: 2.5rem;">R$ {{ '{:,.2f}'.format(salary|default(0)).replace(',','.') }}</h2>
+        
+        <hr style="border-color: var(--border-color);">
+        
+        <h6 class="card-subtitle my-3">MÉDIA DE BENEFÍCIOS</h6>
+        <h2 class="card-title mb-0 currency-value" style="font-size: 2.5rem;">R$ {{ '{:,.2f}'.format(bonus|default(0)).replace(',','.') }}</h2>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

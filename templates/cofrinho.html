@@ -1,0 +1,84 @@
+{% extends "layout.html" %}
+{% set active_page = "savings" %}
+
+{% block content %}
+<div class="row mb-3">
+  <div class="col-12">
+    <h4><i class="bi bi-piggy-bank me-2"></i> Cofrinho / Reserva</h4>
+    <p class="text-muted">Aqui você pode registrar valores guardados, informar o banco e acompanhar o rendimento via CDI (taxa manual ou automática).</p>
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-md-6">
+    <div class="dashboard-card p-3">
+      <h6 class="card-subtitle mb-3">Adicionar Cofrinho</h6>
+      <form method="post" action="{{ url_for('savings.add') }}">
+        <div class="mb-2">
+          <label class="form-label">Nome</label>
+          <input name="name" class="form-control" required>
+        </div>
+        <div class="mb-2">
+          <label class="form-label">Banco</label>
+          <input name="bank" class="form-control">
+        </div>
+        <div class="mb-2">
+          <label class="form-label">Código do Banco</label>
+          <input name="bank_code" class="form-control">
+        </div>
+        <div class="mb-2">
+          <label class="form-label">Saldo (R$)</label>
+          <input name="balance" class="form-control" value="0">
+        </div>
+        <div class="mb-2">
+          <label class="form-label">Taxa CDI anual (%) (opcional)</label>
+          <input name="cdi_rate" class="form-control" placeholder="Ex: 12.5">
+        </div>
+        <div class="d-flex gap-2">
+          <button class="btn btn-primary btn-sm" type="submit">Adicionar</button>
+          <a href="{{ url_for('savings.index') }}" class="btn btn-secondary btn-sm">Cancelar</a>
+          </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="dashboard-card p-3">
+      <h6 class="card-subtitle mb-3">Resumo</h6>
+      {% if savings %}
+        <ul class="list-unstyled">
+          {% for s in savings %}
+            <li class="d-flex justify-content-between align-items-start mb-2">
+              <div>
+                <strong>{{ s.name }}</strong><br>
+                <small class="text-muted">{{ s.bank or '—' }} {% if s.bank_code %}({{ s.bank_code }}){% endif %}</small>
+              </div>
+              <div class="text-end">
+                <div><span class="currency-value">R$ {{ '{:,.2f}'.format(s.balance|default(0)).replace(',','.') }}</span></div>
+                <div class="small text-muted">CDI: {{ s.cdi_rate if s.cdi_rate is not none else '—' }}%</div>
+              </div>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <div class="text-muted">Nenhum cofrinho cadastrado.</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="row mt-3">
+  <div class="col-12">
+    <div class="dashboard-card p-3">
+      <h6 class="card-subtitle mb-3">Ações</h6>
+      <p class="text-muted">Para atualizar automaticamente a taxa CDI, defina a variável de ambiente <code>CDI_API_URL</code> (ex.: URL de um endpoint que retorne a taxa para o banco). Se configurado, use o botão <em>Atualizar taxa</em>.</p>
+      {% if savings %}
+        <form method="post" action="{{ url_for('savings.update_rates') }}">
+          <button class="btn btn-outline-primary btn-sm">Atualizar taxa (auto)</button>
+        </form>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{% endblock %}
