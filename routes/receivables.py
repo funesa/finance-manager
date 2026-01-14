@@ -46,19 +46,23 @@ def index():
     cutoff_str = cutoff_date.strftime('%Y-%m') # "2026-03"
 
     total_pending_manual_target_month = 0
-    # DEBUG: verificar o que está sendo somado
-    debug_items = []
+    # Lista detalhada para o usuario entender a soma
+    calculation_details = []
     
     for row in pending_manual:
-        # row[4] formata 'YYYY-MM-DD'. Comparação de string funciona (ISO 8601)
-        # Se '2026-01-15' < '2026-03' -> True (Inclui atrasados)
-        # Se '2026-02-28' < '2026-03' -> True (Inclui mês atual)
+        # row: (id, debtor_name, description, amount, date, status)
         if row[4] < cutoff_str:
             total_pending_manual_target_month += row[3]
-            debug_items.append(f"INCLUDED: {row[2]} ({row[4]}) = {row[3]}")
-        else:
-            debug_items.append(f"IGNORED: {row[2]} ({row[4]}) = {row[3]}")
-    
+            # Formata para exibir bonitinho: "R$ 50.00 - Nome (Desc)"
+            item_desc = f"{row[1]}"
+            if row[2]:
+                item_desc += f" ({row[2]})"
+            calculation_details.append(f"R$ {'{:,.2f}'.format(row[3])} - {item_desc}")
+
+    # Adiciona recorrentes na lista tambem
+    for rule in pending_recurring_list:
+         calculation_details.append(f"R$ {'{:,.2f}'.format(rule['amount'])} - {rule['debtor_name']} ({rule['description']}) [Recorrente]")
+
     total_pending_target_month = total_pending_recurring_target_month + total_pending_manual_target_month
     
     total_all_pending_manual = sum(row[3] for row in pending_manual)
@@ -81,7 +85,7 @@ def index():
                            current_day=today.day,
                            # --- CORREÇÃO AQUI ---
                            datetime=datetime,
-                           debug_items=debug_items
+                           debug_items=calculation_details
                            )
 
 # ... (restante do arquivo 'receivables.py' permanece o mesmo) ...
