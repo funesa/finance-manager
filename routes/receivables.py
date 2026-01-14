@@ -27,7 +27,7 @@ def index():
     today = datetime.now()
     target_date = today + relativedelta(months=1)
     target_month_str = target_date.strftime('%Y-%m')
-    target_month_display = target_date.strftime('%b/%Y').capitalize()
+    target_month_display = target_date.strftime('%b/%Y').capitalize() + " *"
     
     recurring_rules = db.get_recurring_receivables_by_user(current_user.id)
     paid_in_target_month_ids = db.get_paid_recurring_ids_for_month(current_user.id, target_month_str)
