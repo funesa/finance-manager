@@ -24,10 +24,18 @@ def index():
         except locale.Error:
             locale.setlocale(locale.LC_TIME, '')
 
-    today = datetime.now()
-    target_date = today + relativedelta(months=1)
+    # Mantemos uma visualização simples por mês se desejar
+    month_val = request.args.get('month')
+    if month_val:
+        try:
+            target_date = datetime.strptime(month_val, '%Y-%m')
+        except ValueError:
+            target_date = datetime.now()
+    else:
+        target_date = datetime.now()
+
     target_month_str = target_date.strftime('%Y-%m')
-    target_month_display = target_date.strftime('%b/%Y').capitalize() + " *"
+    target_month_display = target_date.strftime('%b/%Y').capitalize()
     
     recurring_rules = db.get_recurring_receivables_by_user(current_user.id)
     paid_in_target_month_ids = db.get_paid_recurring_ids_for_month(current_user.id, target_month_str)
@@ -38,38 +46,9 @@ def index():
     pending_manual = db.get_receivables_by_user(current_user.id, status='pending')
     paid_history = db.get_paid_receivables_history(current_user.id)
     
-    total_pending_recurring_target_month = sum(rule['amount'] for rule in pending_recurring_list)
-    
-    # Calculate cutoff for "everything up to end of target month"
-    # Precisamos de tudo que é MENOR que o mês seguinte (ex: < '2026-03')
-    cutoff_date = target_date + relativedelta(months=1)
-    cutoff_str = cutoff_date.strftime('%Y-%m') # "2026-03"
+    total_pending_target_month = sum(rule['amount'] for rule in pending_recurring_list)
+    total_pending_target_month += sum(row[3] for row in pending_manual if row[4].startswith(target_month_str))
 
-    total_pending_manual_target_month = 0
-    # Lista detalhada para o usuario entender a soma
-    calculation_details = []
-    
-    for row in pending_manual:
-        # row: (id, debtor_name, description, amount, date, status)
-        if row[4] < cutoff_str:
-            total_pending_manual_target_month += row[3]
-            # Formata para exibir bonitinho: "R$ 50.00 - Nome (Desc)"
-            item_desc = f"{row[1]}"
-            if row[2]:
-                item_desc += f" ({row[2]})"
-            calculation_details.append(f"R$ {'{:,.2f}'.format(row[3])} - {item_desc}")
-
-    # Adiciona recorrentes na lista tambem
-    for rule in pending_recurring_list:
-         calculation_details.append(f"R$ {'{:,.2f}'.format(rule['amount'])} - {rule['debtor_name']} ({rule['description']}) [Recorrente]")
-
-    total_pending_target_month = total_pending_recurring_target_month + total_pending_manual_target_month
-    
-    total_all_pending_manual = sum(row[3] for row in pending_manual)
-    total_all_pending_recurring = sum(rule['amount'] for rule in recurring_rules)
-    total_pending_all_time = total_all_pending_manual + total_all_pending_recurring
-    
-    
     return render_template('receivables.html', 
                            pending_manual_receivables=pending_manual,
                            pending_recurring=pending_recurring_list,
@@ -77,15 +56,12 @@ def index():
                            paid_history=paid_history,
                            
                            total_pending_this_month=total_pending_target_month,
-                           total_pending_all_time=total_pending_all_time,   
-                           
                            target_month_display=target_month_display,
+                           target_month_str=target_month_str,
                            
-                           today=today.strftime('%Y-%m-%d'),
-                           current_day=today.day,
-                           # --- CORREÇÃO AQUI ---
-                           datetime=datetime,
-                           debug_items=calculation_details
+                           today=datetime.now().strftime('%Y-%m-%d'),
+                           current_day=datetime.now().day,
+                           datetime=datetime
                            )
 
 # ... (restante do arquivo 'receivables.py' permanece o mesmo) ...

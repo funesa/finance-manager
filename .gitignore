@@ -4,3 +4,5 @@ data/
 *.pyc
 .vscode/
 .idea/
+finance.db
+.lib/

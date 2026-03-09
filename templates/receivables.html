@@ -10,200 +10,207 @@
 </div>
 
 <div class="row g-3">
+  <div class="col-12">
+    <h5 class="text-white fw-bold"><i class="bi bi-wallet2 me-2"></i>Contas a Receber - {{ target_month_display }}</h5>
+  </div>
+</div>
 
-  <div class="col-lg-5 d-flex flex-column gap-3">
+<div class="col-lg-5 d-flex flex-column gap-3">
 
-    <div class="dashboard-card p-3">
-      <h6 class="card-subtitle mb-3">Adicionar Avulsa / Parcelada</h6>
-      <p class="small text-muted">Use para dívidas únicas ou parceladas (Ex: Pneu da PCX).</p>
+  <div class="dashboard-card p-3">
+    <h6 class="card-subtitle mb-3">Adicionar Avulsa / Parcelada</h6>
+    <p class="small text-muted">Use para dívidas únicas ou parceladas (Ex: Pneu da PCX).</p>
 
-      <form method="post" action="{{ url_for('receivables.add_manual') }}">
-        <div class="mb-2">
-          <label class="form-label">Data (ou 1ª Parcela)</label>
-          <input name="date" type="date" class="form-control" value="{{ today }}" required>
+    <form method="post" action="{{ url_for('receivables.add_manual') }}">
+      <div class="mb-2">
+        <label class="form-label">Data (ou 1ª Parcela)</label>
+        <input name="date" type="date" class="form-control" value="{{ today }}" required>
+      </div>
+      <div class="mb-2">
+        <label class="form-label">Nome da Pessoa</label>
+        <input name="debtor_name" class="form-control" required>
+      </div>
+      <div class="mb-2">
+        <label class="form-label">Descrição</label>
+        <input name="description" class="form-control" placeholder="Ex: Pneu da PCX" required>
+      </div>
+      <div class="row g-2 mb-3">
+        <div class="col-sm-6">
+          <label class="form-label">Valor (Total)</label>
+          <input name="amount" class="form-control" placeholder="369.84" required>
         </div>
-        <div class="mb-2">
-          <label class="form-label">Nome da Pessoa</label>
-          <input name="debtor_name" class="form-control" required>
+        <div class="col-sm-6">
+          <label class="form-label">Parcelas</label>
+          <input name="installments" type="number" min="1" value="1" class="form-control" required>
         </div>
-        <div class="mb-2">
-          <label class="form-label">Descrição</label>
-          <input name="description" class="form-control" placeholder="Ex: Pneu da PCX" required>
-        </div>
-        <div class="row g-2 mb-3">
-          <div class="col-sm-6">
-            <label class="form-label">Valor (Total)</label>
-            <input name="amount" class="form-control" placeholder="369.84" required>
-          </div>
-          <div class="col-sm-6">
-            <label class="form-label">Parcelas</label>
-            <input name="installments" type="number" min="1" value="1" class="form-control" required>
-          </div>
-        </div>
-        <button class="btn btn-primary" type="submit">Adicionar Dívida</button>
-      </form>
-    </div>
-
-    <div class="dashboard-card p-3">
-      <h6 class="card-subtitle mb-3">Gerenciar Cobranças Recorrentes</h6>
-      <p class="small text-muted">Use para assinaturas (Ex: Spotify, Netflix) que você cobra todo mês.</p>
-      <button class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#recurringModal">
-        <i class="bi bi-gear-fill me-1"></i>
-        Gerenciar Regras Recorrentes
-      </button>
-    </div>
+      </div>
+      <button class="btn btn-primary" type="submit">Adicionar Dívida</button>
+    </form>
   </div>
 
-  <div class="col-lg-7 d-flex flex-column gap-3">
+  <div class="dashboard-card p-3">
+    <h6 class="card-subtitle mb-3">Gerenciar Cobranças Recorrentes</h6>
+    <p class="small text-muted">Use para assinaturas (Ex: Spotify, Netflix) que você cobra todo mês.</p>
+    <button class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#recurringModal">
+      <i class="bi bi-gear-fill me-1"></i>
+      Gerenciar Regras Recorrentes
+    </button>
+  </div>
+</div>
 
-    <div class="dashboard-card p-3 text-center">
-      <h6 class="card-subtitle text-danger">PENDENTE ({{ target_month_display }})</h6>
-      <h2 class="card-title text-danger mb-0"><span class="currency-value">R$ {{
-          '{:,.2f}'.format(total_pending_this_month).replace(',','.') }}</span></h2>
-      <small class="text-muted">(Total geral pendente: <span class="currency-value">R$ {{
-          '{:,.2f}'.format(total_pending_all_time).replace(',','.') }}</span>)</small>
+<div class="col-lg-7 d-flex flex-column gap-3">
 
-      {% if debug_items %}
-      <hr class="my-3 opacity-25">
-      <div class="text-center">
-        <button class="btn btn-sm btn-link text-decoration-none text-muted" type="button" data-bs-toggle="collapse"
-          data-bs-target="#debugCollapse">
-          <small><i class="bi bi-info-circle me-1"></i> Ver detalhes do cálculo</small>
-        </button>
-      </div>
-      <div class="collapse mt-2" id="debugCollapse">
-        <div class="card card-body bg-dark bg-opacity-50 text-white p-2 small border border-secondary"
-          style="text-align: left;">
-          <h6 class="text-muted border-bottom pb-1 mb-2" style="font-size: 0.85em;">Itens somados:</h6>
-          <ul class="list-unstyled mb-0" style="font-size: 0.9em;">
-            {% for item in debug_items %}
-            <li class="mb-1 d-flex align-items-start">
-              <i class="bi bi-check-circle-fill text-success me-2 mt-1" style="font-size: 0.8em;"></i>
-              <span>{{ item }}</span>
-            </li>
-            {% endfor %}
-          </ul>
-        </div>
-      </div>
-      {% endif %}
+  <div class="dashboard-card p-4 text-center border-0 shadow-lg"
+    style="background: rgba(239, 68, 68, 0.05); backdrop-filter: var(--glass-blur);">
+    <h6 class="text-uppercase small fw-bold text-danger opacity-75 mb-3">PENDENTE ({{ target_month_display }})</h6>
+    <h1 class="display-5 fw-bold text-danger mb-2"><span class="currency-value">R$ {{
+        '{:,.2f}'.format(total_pending_this_month|default(0)).replace(',','.') }}</span></h1>
+    <small class="text-muted">Total acumulado: <span class="currency-value">R$ {{
+        '{:,.2f}'.format(total_pending_all_time|default(0)).replace(',','.') }}</span></small>
+
+    {% if debug_items %}
+    <hr class="my-4 opacity-10">
+    <div class="text-center">
+      <button class="btn btn-sm btn-outline-secondary rounded-pill px-3" type="button" data-bs-toggle="collapse"
+        data-bs-target="#debugCollapse">
+        <small><i class="bi bi-info-circle me-1"></i> Ver detalhes do cálculo</small>
+      </button>
     </div>
-
-    <div class="dashboard-card p-3">
-      <h6 class="card-subtitle mb-3">Recorrentes Pendentes ({{ target_month_display }})</h6>
-      {% if pending_recurring %}
-      <div class="table-responsive mb-4">
-        <table class="table table-hover align-middle table-mobile-cards">
-          <thead>
-            <tr>
-              <th>Nome</th>
-              <th>Descrição</th>
-              <th>Dia Venc.</th>
-              <th>Valor</th>
-              <th class="text-end">Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for rule in pending_recurring %}
-            <tr>
-              <td data-label="Nome">{{ rule.debtor_name }}</td>
-              <td data-label="Descrição">{{ rule.description or '—' }}</td>
-              <td data-label="Dia Venc.">Dia {{ rule.day_of_month }}</td>
-              <td data-label="Valor" class="text-danger"><span class="currency-value">R$ {{
-                  '{:,.2f}'.format(rule.amount).replace(',','.') }}</span></td>
-              <td data-label="Ações">
-                <form action="{{ url_for('receivables.pay_recurring', recurring_id=rule.id) }}" method="POST"
-                  class="d-inline justify-content-end d-flex">
-                  <button type="submit" class="btn btn-success" title="Marcar como Pago (Este Mês)">
-                    <i class="bi bi-check-lg me-1"></i> Recebido
-                  </button>
-                </form>
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-      {% else %}
-      <p class="text-muted small mt-2">Nenhuma cobrança recorrente pendente para {{ target_month_display }}.</p>
-      {% endif %}
-      <hr>
-
-      <h6 class="card-subtitle my-3">Avulsas / Parceladas Pendentes (Geral)</h6>
-      {% if pending_manual_receivables %}
-      <div class="table-responsive">
-        <table class="table table-hover align-middle table-mobile-cards">
-          <thead>
-            <tr>
-              <th>Nome</th>
-              <th>Descrição</th>
-              <th>Data</th>
-              <th>Valor</th>
-              <th class="text-end">Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for id, name, desc, amount, date, status in pending_manual_receivables %}
-            <tr>
-              <td data-label="Nome">{{ name }}</td>
-              <td data-label="Descrição">{{ desc or '—' }}</td>
-              <td data-label="Data">{{ date.split('-') | reverse | join('/') }}</td>
-              <td data-label="Valor" class="text-danger"><span class="currency-value">R$ {{
-                  '{:,.2f}'.format(amount).replace(',','.') }}</span></td>
-              <td data-label="Ações">
-                <div class="d-flex gap-1 justify-content-end">
-                  <form action="{{ url_for('receivables.mark_manual_paid', receivable_id=id) }}" method="POST"
-                    class="d-inline">
-                    <button type="submit" class="btn btn-success" title="Marcar como Pago">
-                      <i class="bi bi-check-lg"></i>
-                    </button>
-                  </form>
-                  <button class="btn btn-info" data-bs-toggle="modal" data-bs-target="#editReceivableModal"
-                    onclick="loadReceivableData('{{ id }}')" title="Editar">
-                    <i class="bi bi-pencil-fill"></i>
-                  </button>
-                  <form action="{{ url_for('receivables.delete_manual', receivable_id=id) }}" method="POST"
-                    class="d-inline">
-                    <button type="submit" class="btn btn-danger" title="Apagar"
-                      onclick="return confirm('Tem certeza que deseja apagar?');">
-                      <i class="bi bi-trash-fill"></i>
-                    </button>
-                  </form>
-                </div>
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-      {% else %}
-      <p class="text-muted small mt-2">Nenhuma dívida avulsa ou parcelada pendente.</p>
-      {% endif %}
-    </div>
-
-    <div class="dashboard-card p-3">
-      <h6 class="card-subtitle mb-3">Dívidas Pagas (Histórico)</h6>
-      <div style="max-height: 250px; overflow-y: auto;">
-        {% if paid_history %}
-        <ul class="list-group list-group-flush">
-          {% for id, name, desc, amount, date, status in paid_history %}
-          <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent">
-            <div>
-              <strong>{{ name }}</strong>
-              <small class="d-block text-muted">{{ desc or 'Sem descrição' }} ({{ date.split('-') | reverse | join('/')
-                }})</small>
-            </div>
-            <span class="badge bg-success rounded-pill"><span class="currency-value">R$ {{
-                '{:,.2f}'.format(amount).replace(',','.') }}</span></span>
+    <div class="collapse mt-3" id="debugCollapse">
+      <div class="card card-body bg-black bg-opacity-25 text-white p-3 small border-0 text-start">
+        <h6 class="text-secondary small fw-bold text-uppercase mb-2">Itens somados:</h6>
+        <ul class="list-unstyled mb-0">
+          {% for item in debug_items %}
+          <li class="mb-2 d-flex align-items-center gap-2">
+            <i class="bi bi-dot fs-4 text-danger"></i>
+            <span>{{ item }}</span>
           </li>
           {% endfor %}
         </ul>
-        {% else %}
-        <p class="text-muted small mt-2">Nenhum registro de dívida paga.</p>
-        {% endif %}
       </div>
     </div>
-
+    {% endif %}
   </div>
+
+  <div class="dashboard-card p-4 border-0">
+    <h6 class="text-uppercase small fw-bold text-secondary mb-4"><i class="bi bi-clock-history me-2"></i>Recorrentes
+      Pendentes ({{ target_month_display }})</h6>
+    {% if pending_recurring %}
+    <div class="table-responsive">
+      <table class="table table-hover align-middle table-mobile-cards">
+        <thead>
+          <tr>
+            <th>Nome</th>
+            <th>Descrição</th>
+            <th>Vencimento</th>
+            <th>Valor</th>
+            <th class="text-end">Ação</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for rule in pending_recurring %}
+          <tr>
+            <td data-label="Nome" class="fw-bold">{{ rule.debtor_name }}</td>
+            <td data-label="Descrição">{{ rule.description or '—' }}</td>
+            <td data-label="Vencimento">Dia {{ rule.day_of_month }}</td>
+            <td data-label="Valor" class="text-danger fw-bold"><span class="currency-value">R$ {{
+                '{:,.2f}'.format(rule.amount).replace(',','.') }}</span></td>
+            <td data-label="Ação" class="text-end">
+              <form action="{{ url_for('receivables.pay_recurring', recurring_id=rule.id) }}" method="POST">
+                <button type="submit" class="btn btn-success btn-sm rounded-pill px-3">
+                  <i class="bi bi-check-lg me-1"></i> Recebido
+                </button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="text-muted small text-center py-4">Nenhuma cobrança recorrente pendente.</p>
+    {% endif %}
+  </div>
+
+  <div class="dashboard-card p-4 border-0">
+    <h6 class="text-uppercase small fw-bold text-secondary mb-4"><i class="bi bi-list-stars me-2"></i>Avulsas /
+      Parceladas (Geral)</h6>
+    {% if pending_manual_receivables %}
+    <div class="table-responsive">
+      <table class="table table-hover align-middle table-mobile-cards">
+        <thead>
+          <tr>
+            <th>Nome</th>
+            <th>Descrição</th>
+            <th>Data</th>
+            <th>Valor</th>
+            <th class="text-end">Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for id, name, desc, amount, date, status in pending_manual_receivables %}
+          <tr>
+            <td data-label="Nome" class="fw-bold">{{ name }}</td>
+            <td data-label="Descrição">{{ desc or '—' }}</td>
+            <td data-label="Data">{{ date.split('-') | reverse | join('/') }}</td>
+            <td data-label="Valor" class="text-danger fw-bold"><span class="currency-value">R$ {{
+                '{:,.2f}'.format(amount).replace(',','.') }}</span></td>
+            <td data-label="Ações">
+              <div class="d-flex gap-2 justify-content-end">
+                <form action="{{ url_for('receivables.mark_manual_paid', receivable_id=id) }}" method="POST">
+                  <button type="submit" class="btn btn-sm btn-success rounded-circle"
+                    style="width: 32px; height: 32px; padding: 0;" title="Receber">
+                    <i class="bi bi-check-lg"></i>
+                  </button>
+                </form>
+                <button class="btn btn-sm btn-outline-primary rounded-circle"
+                  style="width: 32px; height: 32px; padding: 0;" data-bs-toggle="modal"
+                  data-bs-target="#editReceivableModal" onclick="loadReceivableData('{{ id }}')" title="Editar">
+                  <i class="bi bi-pencil"></i>
+                </button>
+                <form action="{{ url_for('receivables.delete_manual', receivable_id=id) }}" method="POST">
+                  <button type="submit" class="btn btn-sm btn-outline-danger rounded-circle"
+                    style="width: 32px; height: 32px; padding: 0;" title="Excluir"
+                    onclick="return confirm('Tem certeza?');">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="text-muted small text-center py-4">Nenhuma dívida avulsa pendente.</p>
+    {% endif %}
+  </div>
+
+  <div class="dashboard-card p-3">
+    <h6 class="card-subtitle mb-3">Dívidas Pagas (Histórico)</h6>
+    <div style="max-height: 250px; overflow-y: auto;">
+      {% if paid_history %}
+      <ul class="list-group list-group-flush">
+        {% for id, name, desc, amount, date, status in paid_history %}
+        <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent">
+          <div>
+            <strong>{{ name }}</strong>
+            <small class="d-block text-muted">{{ desc or 'Sem descrição' }} ({{ date.split('-') | reverse | join('/')
+              }})</small>
+          </div>
+          <span class="badge bg-success rounded-pill"><span class="currency-value">R$ {{
+              '{:,.2f}'.format(amount).replace(',','.') }}</span></span>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="text-muted small mt-2">Nenhum registro de dívida paga.</p>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
 </div>
 
 <div class="modal fade" id="editReceivableModal" tabindex="-1" aria-hidden="true">
