@@ -68,7 +68,7 @@ def index():
     rows = db.fetch_transactions(**filter_args, limit=per_page, offset=offset)
     df = db.to_df(rows)
     
-    income, expense, bal = db.calculate_filtered_summary(**filter_args)
+    summary = db.calculate_filtered_summary(**filter_args)
     
     # Se estivermos vendo o mês atual (por padrão), incluímos salário no balanço se desejar
     # (Opcional, mas mantendo a lógica original onde possível)
@@ -78,9 +78,12 @@ def index():
 
     return render_template("index.html",
                            rows=df.to_dict(orient="records"),
-                           income=income,
-                           expense=expense,
-                           bal=bal,
+                           income=summary['paid_income'],
+                           expense=summary['paid_expense'],
+                           bal=summary['paid_bal'],
+                           total_income=summary['total_income'],
+                           total_expense=summary['total_expense'],
+                           total_bal=summary['total_bal'],
                            categories=categories,
                            recurring_rules=recurring_rules,
                            page=page,

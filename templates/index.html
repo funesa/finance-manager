@@ -2,29 +2,27 @@
 {% set active_page = "transactions" %}
 
 {% block content %}
-<div class="row mb-4 g-4">
+<div class="row g-3 mb-4">
   <div class="col-md-4">
-    <div class="card text-bg-success border-0 shadow-lg">
-      <div class="card-body p-4">
-        <h6 class="text-uppercase small fw-bold opacity-75 mb-2">Total Receitas (Filtro)</h6>
-        <h3 class="mb-0 fw-bold"><span class="currency-value">R$ {{ '%.2f'|format(income) }}</span></h3>
-      </div>
+    <div class="dashboard-card p-3 border-0 shadow-sm" style="background: rgba(34, 197, 94, 0.1);">
+      <h6 class="text-uppercase small fw-bold text-success opacity-75 mb-1">Total Receitas (Filtro)</h6>
+      <h3 class="fw-bold text-success mb-0">R$ {{ '%.2f'|format(income) }}</h3>
+      <small class="text-muted">Previsto: R$ {{ '%.2f'|format(total_income) }}</small>
     </div>
   </div>
   <div class="col-md-4">
-    <div class="card text-bg-danger border-0 shadow-lg">
-      <div class="card-body p-4">
-        <h6 class="text-uppercase small fw-bold opacity-75 mb-2">Total Despesas (Filtro)</h6>
-        <h3 class="mb-0 fw-bold"><span class="currency-value">R$ {{ '%.2f'|format(expense) }}</span></h3>
-      </div>
+    <div class="dashboard-card p-3 border-0 shadow-sm" style="background: rgba(239, 68, 68, 0.1);">
+      <h6 class="text-uppercase small fw-bold text-danger opacity-75 mb-1">Total Despesas (Filtro)</h6>
+      <h3 class="fw-bold text-danger mb-0">R$ {{ '%.2f'|format(expense) }}</h3>
+      <small class="text-muted">Previsto: R$ {{ '%.2f'|format(total_expense) }}</small>
     </div>
   </div>
   <div class="col-md-4">
-    <div class="card text-bg-primary border-0 shadow-lg">
-      <div class="card-body p-4">
-        <h6 class="text-uppercase small fw-bold opacity-75 mb-2">Saldo (Filtro)</h6>
-        <h3 class="mb-0 fw-bold"><span class="currency-value">R$ {{ '%.2f'|format(bal) }}</span></h3>
-      </div>
+    <div class="dashboard-card p-3 border-0 shadow-sm"
+      style="background: rgba({{ '96, 165, 250, 0.1' if bal >= 0 else '239, 68, 68, 0.1' }});">
+      <h6 class="text-uppercase small fw-bold text-primary opacity-75 mb-1">Saldo (Filtro)</h6>
+      <h3 class="fw-bold {{ 'text-primary' if bal >= 0 else 'text-danger' }} mb-0">R$ {{ '%.2f'|format(bal) }}</h3>
+      <small class="text-muted">Previsto: R$ {{ '%.2f'|format(total_bal) }}</small>
     </div>
   </div>
 </div>
@@ -117,7 +115,8 @@
         <thead>
           <tr>
             <th>ID</th>
-            <th>Data</th>
+            <th>Lançamento</th>
+            <th>Vencimento</th>
             <th>Descrição</th>
             <th>Categoria</th>
             <th>Valor</th>
@@ -130,9 +129,15 @@
           {% for r in rows %}
           <tr class="{{ 'opacity-75' if r.status == 'pendente' }}">
             <td data-label="ID">{{ r.id }}</td>
-            <td data-label="Data">{{ r.date }}</td>
+            <td data-label="Lançamento">
+              <small class="text-muted">{{ r.created_at[:10] if r.created_at else '--' }}</small>
+            </td>
+            <td data-label="Vencimento">{{ r.date }}</td>
             <td data-label="Descrição">
               {{ r.description }}
+              {% if r.recurring_id %}
+              <span class="badge rounded-pill bg-info text-dark ms-1" style="font-size: 0.65rem;">Fixa</span>
+              {% endif %}
               {% if r.status == 'pendente' %}
               <span class="badge rounded-pill bg-warning text-dark ms-1" style="font-size: 0.7rem;">Pendente</span>
               {% endif %}

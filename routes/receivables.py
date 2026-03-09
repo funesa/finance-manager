@@ -46,8 +46,13 @@ def index():
     pending_manual = db.get_receivables_by_user(current_user.id, status='pending')
     paid_history = db.get_paid_receivables_history(current_user.id)
     
+    # Soma do mês selecionado
     total_pending_target_month = sum(rule['amount'] for rule in pending_recurring_list)
-    total_pending_target_month += sum(row[3] for row in pending_manual if row[4].startswith(target_month_str))
+    total_pending_target_month += sum(row[3] for row in pending_manual if row[4][:7] == target_month_str)
+
+    # Soma de todos os tempos (Pendentes manuais totais + recorrentes do mês alvo)
+    total_pending_all_time = sum(row[3] for row in pending_manual)
+    total_pending_all_time += sum(rule['amount'] for rule in pending_recurring_list)
 
     return render_template('receivables.html', 
                            pending_manual_receivables=pending_manual,
@@ -56,6 +61,7 @@ def index():
                            paid_history=paid_history,
                            
                            total_pending_this_month=total_pending_target_month,
+                           total_pending_all_time=total_pending_all_time,
                            target_month_display=target_month_display,
                            target_month_str=target_month_str,
                            

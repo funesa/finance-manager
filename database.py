@@ -57,7 +57,7 @@ def init_db():
             );
         """)
         
-        # Tabela de Transações (MODIFICADO: Adicionado user_id e status)
+        # Tabela de Transações (MODIFICADO: Adicionado user_id, status e created_at)
         cur.execute("""
             CREATE TABLE IF NOT EXISTS transactions (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -70,6 +70,7 @@ def init_db():
                 user_id INTEGER NOT NULL,
                 status TEXT NOT NULL DEFAULT 'paid', -- 'paid' ou 'pendente'
                 recurring_id INTEGER, 
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (user_id) REFERENCES users (id),
                 FOREIGN KEY (category_id) REFERENCES categories (id),
                 FOREIGN KEY (recurring_id) REFERENCES recurring_expenses (id)
@@ -169,13 +170,17 @@ def init_db():
         except sqlite3.OperationalError:
             pass
 
-        # Migração Transações: status e recurring_id
+        # Migração Transações: status, recurring_id, created_at
         try:
             cur.execute("ALTER TABLE transactions ADD COLUMN status TEXT NOT NULL DEFAULT 'paid'")
         except sqlite3.OperationalError:
             pass
         try:
-            cur.execute("ALTER TABLE transactions ADD COLUMN recurring_id INTEGER REFERENCES recurring_expenses(id)")
+            cur.execute("ALTER TABLE transactions ADD COLUMN recurring_id INTEGER")
+        except sqlite3.OperationalError:
+            pass
+        try:
+            cur.execute("ALTER TABLE transactions ADD COLUMN created_at TEXT DEFAULT CURRENT_TIMESTAMP")
         except sqlite3.OperationalError:
             pass
         # --- FIM DA CORREÇÃO (MIGRAÇÃO) ---
@@ -253,7 +258,12 @@ def get_category_id(name, user_id):
 # --- Funções de Transações (MODIFICADO: Requer user_id) ---
 def fetch_transactions(user_id, filter_category=None, date_from=None, date_to=None, search=None, limit=None, offset=None, status=None):
     """Busca transações de um usuário com filtros, pesquisa e paginação."""
-    q = "SELECT t.id, t.date, t.description, c.name as category, t.amount, t.type, t.note, t.status FROM transactions t LEFT JOIN categories c ON t.category_id = c.id WHERE t.user_id = ?"
+    q = """
+        SELECT t.id, t.date, t.description, c.name as category, t.amount, t.type, t.note, t.status, t.recurring_id, t.created_at
+        FROM transactions t
+        LEFT JOIN categories c ON t.category_id = c.id
+        WHERE t.user_id = ?
+    """
     params = [user_id]
     
     if status:
@@ -338,8 +348,8 @@ def update_transaction(trans_id, user_id, date, desc, category_id, amount, typ, 
 # --- Funções de Resumo e Utilitários (MODIFICADO: Requer user_id) ---
 
 def calculate_filtered_summary(user_id, filter_category=None, date_from=None, date_to=None, search=None):
-    """Calcula o resumo (receita, despesa, saldo) de um usuário com base nos filtros (apenas PAGOS)."""
-    base_q = "SELECT SUM(t.amount) FROM transactions t LEFT JOIN categories c ON t.category_id = c.id WHERE t.user_id = ? AND t.status = 'paid'"
+    """Calcula o resumo (receita, despesa, saldo) de um usuário com base nos filtros (Pagos vs Previstos)."""
+    base_q = "SELECT SUM(t.amount) FROM transactions t LEFT JOIN categories c ON t.category_id = c.id WHERE t.user_id = ?"
     params = [user_id]
     
     if filter_category:
@@ -355,21 +365,41 @@ def calculate_filtered_summary(user_id, filter_category=None, date_from=None, da
         base_q += " AND (t.description LIKE ? OR c.name LIKE ? OR t.note LIKE ?)"
         params.extend([f"%{search}%", f"%{search}%", f"%{search}%"])
 
-    q_income = base_q + " AND t.type = 'income'"
-    q_expense = base_q + " AND t.type = 'expense'"
+    # Consultas para PAGO
+    q_paid_inc = base_q + " AND t.status = 'paid' AND t.type = 'income'"
+    q_paid_exp = base_q + " AND t.status = 'paid' AND t.type = 'expense'"
+    
+    # Consultas para TOTAL (Pago + Pendente)
+    q_total_inc = base_q + " AND t.type = 'income'"
+    q_total_exp = base_q + " AND t.type = 'expense'"
     
     with get_conn() as conn:
         cur = conn.cursor()
-        cur.execute(q_income, params)
-        income = cur.fetchone()[0] or 0.0
-        cur.execute(q_expense, params)
-        expense = cur.fetchone()[0] or 0.0
         
-    return income, expense, income - expense
+        # Pagos
+        cur.execute(q_paid_inc, params)
+        paid_income = cur.fetchone()[0] or 0.0
+        cur.execute(q_paid_exp, params)
+        paid_expense = cur.fetchone()[0] or 0.0
+        
+        # Totais (Previstos)
+        cur.execute(q_total_inc, params)
+        total_income = cur.fetchone()[0] or 0.0
+        cur.execute(q_total_exp, params)
+        total_expense = cur.fetchone()[0] or 0.0
+        
+    return {
+        "paid_income": paid_income,
+        "paid_expense": paid_expense,
+        "paid_bal": paid_income - paid_expense,
+        "total_income": total_income,
+        "total_expense": total_expense,
+        "total_bal": total_income - total_expense
+    }
 
 def to_df(rows):
     """Converte as linhas do banco de dados em um DataFrame Pandas."""
-    columns = ["id", "date", "description", "category", "amount", "type", "note", "status"]
+    columns = ["id", "date", "description", "category", "amount", "type", "note", "status", "recurring_id", "created_at"]
     df = pd.DataFrame(rows, columns=columns)
     if not df.empty:
         df["amount"] = pd.to_numeric(df["amount"], errors="coerce").fillna(0.0)
