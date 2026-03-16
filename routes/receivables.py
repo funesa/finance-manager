@@ -12,22 +12,31 @@ receivables_bp = Blueprint('receivables', __name__)
 def index():
     try:
         utils.setup_locale()
+        # O mês alvo (target) agora será tratado como o Mês de Referência (trabalho/competência)
         m = utils.get_month_range(request.args.get('month'))
+        
+        # O mês de recebimento principal para o trabalho deste mês é o próximo mês (dia 5, etc)
+        payment_month_str = m['next_month']
+        payment_month_display = m['next_month_display']
 
         recurring_rules = db.get_recurring_receivables_by_user(current_user.id)
-        paid_in_month_ids = db.get_paid_recurring_ids_for_month(current_user.id, m['month_str'])
+        # Recorrentes pagas neste mês de recebimento alvo
+        paid_in_month_ids = db.get_paid_recurring_ids_for_month(current_user.id, payment_month_str)
         
         pending_recurring = [r for r in recurring_rules if r['id'] not in paid_in_month_ids]
         pending_manual = db.get_receivables_by_user(current_user.id, status='pending')
         
-        # --- Cálculo Mês Atual ---
-        total_this_month = sum(float(r['amount']) for r in pending_recurring)
-        total_this_month += sum(float(r['amount']) for r in pending_manual if r['date'][:7] <= m['month_str'])
+        # --- Cálculo do Ciclo Atual (Dinheiro que entra no mês seguinte referente a este mês) ---
+        # 1. Recorrentes que vencem no mês de pagamento alvo
+        total_cycle = sum(float(r['amount']) for r in pending_recurring)
+        # 2. Manuais cujo Mês de Referência é o mês alvo OU cujo Vencimento é o mês de pagamento alvo
+        for r in pending_manual:
+            ref = r.get('reference_month') or r['date'][:7]
+            payout = r['date'][:7]
+            if ref == m['month_str'] or payout == payment_month_str:
+                total_cycle += float(r['amount'])
         
-        # --- Cálculo Mês Seguinte ---
-        total_next_month = sum(float(r['amount']) for r in recurring_rules)
-        total_next_month += sum(float(r['amount']) for r in pending_manual if r['date'][:7] == m['next_month'])
-
+        # --- Atrasados + Próximos ---
         total_all_time = sum(float(r['amount']) for r in pending_manual) + sum(float(r['amount']) for r in pending_recurring)
 
         return render_template('receivables.html', 
@@ -35,14 +44,14 @@ def index():
                                pending_recurring=pending_recurring,
                                all_recurring_rules=recurring_rules,
                                paid_history=db.get_paid_receivables_history(current_user.id),
-                               total_pending_this_month=total_this_month,
-                               total_pending_next_month=total_next_month,
+                               total_pending_cycle=total_cycle,
                                total_pending_all_time=total_all_time,
                                target_month_display=m['display'],
                                target_month_str=m['month_str'],
+                               payment_month_display=payment_month_display,
+                               payment_month_str=payment_month_str,
                                prev_month_str=m['prev_month'],
                                next_month_str=m['next_month'],
-                               next_month_display=m['next_month_display'],
                                today=datetime.now().strftime('%Y-%m-%d'),
                                datetime=datetime)
     except Exception as e:
@@ -54,7 +63,9 @@ def index():
 def add_manual():
     try:
         amount = utils.parse_amount(request.form.get('amount'))
-        db.add_receivable(current_user.id, request.form.get('debtor_name'), request.form.get('description'), amount, request.form.get('date'))
+        ref_month = request.form.get('reference_month')
+        db.add_receivable(current_user.id, request.form.get('debtor_name'), request.form.get('description'), 
+                          amount, request.form.get('date'), reference_month=ref_month)
         flash("Conta a receber adicionada!", "success")
     except Exception as e: flash(f"Erro: {e}", "danger")
     return redirect(url_for('receivables.index'))

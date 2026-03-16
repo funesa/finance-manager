@@ -67,12 +67,13 @@ def init_db():
         cur.execute("CREATE TABLE IF NOT EXISTS budgets (id INTEGER PRIMARY KEY AUTOINCREMENT, category_id INTEGER NOT NULL, amount REAL NOT NULL, month TEXT NOT NULL, user_id INTEGER NOT NULL, UNIQUE(category_id, month, user_id), FOREIGN KEY (user_id) REFERENCES users (id), FOREIGN KEY (category_id) REFERENCES categories (id))")
         cur.execute("CREATE TABLE IF NOT EXISTS salary_info (user_id INTEGER PRIMARY KEY, salary REAL NOT NULL DEFAULT 0, bonus REAL NOT NULL DEFAULT 0, FOREIGN KEY (user_id) REFERENCES users (id))")
         cur.execute("CREATE TABLE IF NOT EXISTS savings (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, name TEXT NOT NULL, bank TEXT, bank_code TEXT, balance REAL NOT NULL DEFAULT 0, cdi_rate REAL DEFAULT NULL, last_rate_update TEXT, currency TEXT DEFAULT 'BRL', FOREIGN KEY (user_id) REFERENCES users (id))")
-        cur.execute("CREATE TABLE IF NOT EXISTS receivables (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, debtor_name TEXT NOT NULL, description TEXT, amount REAL NOT NULL, date TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'pending', recurring_id INTEGER, FOREIGN KEY (user_id) REFERENCES users (id))")
+        cur.execute("CREATE TABLE IF NOT EXISTS receivables (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, debtor_name TEXT NOT NULL, description TEXT, amount REAL NOT NULL, date TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'pending', recurring_id INTEGER, reference_month TEXT, FOREIGN KEY (user_id) REFERENCES users (id))")
         cur.execute("CREATE TABLE IF NOT EXISTS recurring_receivables (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, debtor_name TEXT NOT NULL, description TEXT, amount REAL NOT NULL, day_of_month INTEGER NOT NULL, FOREIGN KEY (user_id) REFERENCES users (id))")
         
         # Migrations
         migrations = [
             ("receivables", "ALTER TABLE receivables ADD COLUMN recurring_id INTEGER"),
+            ("receivables", "ALTER TABLE receivables ADD COLUMN reference_month TEXT"),
             ("transactions", "ALTER TABLE transactions ADD COLUMN status TEXT NOT NULL DEFAULT 'paid'"),
             ("transactions", "ALTER TABLE transactions ADD COLUMN recurring_id INTEGER"),
             ("transactions", "ALTER TABLE transactions ADD COLUMN created_at TEXT DEFAULT CURRENT_TIMESTAMP")
@@ -212,9 +213,9 @@ def set_salary_info(user_id: int, salary: float, bonus: float):
         conn.commit()
 
 # --- Receivables ---
-def add_receivable(user_id: int, debtor_name: str, description: str, amount: float, date: str, status: str = 'pending', recurring_id: int = None):
+def add_receivable(user_id: int, debtor_name: str, description: str, amount: float, date: str, status: str = 'pending', recurring_id: int = None, reference_month: str = None):
     with get_conn() as conn:
-        conn.execute("INSERT INTO receivables (user_id, debtor_name, description, amount, date, status, recurring_id) VALUES (?, ?, ?, ?, ?, ?, ?)", (user_id, debtor_name, description, amount, date, status, recurring_id))
+        conn.execute("INSERT INTO receivables (user_id, debtor_name, description, amount, date, status, recurring_id, reference_month) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", (user_id, debtor_name, description, amount, date, status, recurring_id, reference_month))
         conn.commit()
 
 def get_receivable_by_id(receivable_id: int, user_id: int) -> Optional[Dict[str, Any]]:

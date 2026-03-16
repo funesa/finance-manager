@@ -17,19 +17,16 @@
         </a>
       </div>
       
-      <h6 class="text-uppercase small fw-bold text-danger opacity-75 mb-3 tracking-wider">Total até o fim de {{ target_month_display }}</h6>
+      <h6 class="text-uppercase small fw-bold text-danger opacity-75 mb-3 tracking-wider">Ciclo: {{ target_month_display }} (Ref) ➜ {{ payment_month_display }} (Recebimento)</h6>
       <h1 class="display-3 fw-bold text-danger mb-2" style="font-family: 'Outfit';">
-        <span class="currency-value">R$ {{ '{:.2f}'.format(total_pending_this_month|default(0)) }}</span>
+        <span class="currency-value">R$ {{ '{:.2f}'.format(total_pending_cycle|default(0)) }}</span>
       </h1>
-      <div class="d-flex flex-wrap justify-content-center gap-2 mt-3">
+      <div class="d-flex flex-wrap justify-content-center gap-3 mt-3">
         <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 px-3 py-2 rounded-pill">
-          <i class="bi bi-exclamation-circle me-1"></i> Atrasados + Mês: R$ {{ '{:.2f}'.format(total_pending_this_month|default(0)) }}
-        </span>
-        <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 px-3 py-2 rounded-pill">
-          <i class="bi bi-calendar-event me-1"></i> Previsão {{ next_month_display }}: R$ {{ '{:.2f}'.format(total_pending_next_month|default(0)) }}
+          <i class="bi bi-calendar-check me-1"></i> Previsto em {{ payment_month_display }}: R$ {{ '{:.2f}'.format(total_pending_cycle|default(0)) }}
         </span>
         <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 px-3 py-2 rounded-pill">
-          <i class="bi bi-infinity me-1"></i> Total Geral: R$ {{ '{:.2f}'.format(total_pending_all_time|default(0)) }}
+          <i class="bi bi-infinity me-1"></i> Total Geral de Pendências: R$ {{ '{:.2f}'.format(total_pending_all_time|default(0)) }}
         </span>
       </div>
 
@@ -61,34 +58,34 @@
         <p class="small text-muted mb-4">Registre compras avulsas ou parceladas feitas por terceiros.</p>
 
         <form method="post" action="{{ url_for('receivables.add_manual') }}">
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <div class="form-floating">
+                <input name="reference_month" type="month" class="form-control bg-transparent" id="floatRef" value="{{ target_month_str }}" required>
+                <label for="floatRef">Mês Ref. (Trabalho)</label>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="form-floating">
+                <input name="date" type="date" class="form-control bg-transparent" id="floatDate" value="{{ payment_month_str }}-05" required>
+                <label for="floatDate">Recebimento (Dia 5?)</label>
+              </div>
+            </div>
+          </div>
           <div class="form-floating mb-3">
             <input name="debtor_name" class="form-control bg-transparent" id="floatName" placeholder="Nome" required>
-            <label for="floatName">Nome da Pessoa</label>
+            <label for="floatName">Nome da Pessoa/Cliente</label>
           </div>
           <div class="form-floating mb-3">
-            <input name="description" class="form-control bg-transparent" id="floatDesc" placeholder="Descrição" required>
-            <label for="floatDesc">Descrição (ex: Pneu PCX)</label>
-          </div>
-          <div class="row g-2 mb-3">
-            <div class="col-7">
-              <div class="form-floating">
-                <input name="amount" class="form-control bg-transparent" id="floatAmount" placeholder="0.00" required>
-                <label for="floatAmount">Valor Total (R$)</label>
-              </div>
-            </div>
-            <div class="col-5">
-              <div class="form-floating">
-                <input name="installments" type="number" min="1" value="1" class="form-control bg-transparent" id="floatInstall" required>
-                <label for="floatInstall">Parcelas</label>
-              </div>
-            </div>
+            <input name="description" class="form-control bg-transparent" id="floatDesc" placeholder="Descrição">
+            <label for="floatDesc">Descrição (O que é?)</label>
           </div>
           <div class="form-floating mb-4">
-            <input name="date" type="date" class="form-control bg-transparent" id="floatDate" value="{{ today }}" required>
-            <label for="floatDate">Data (ou 1ª Parcela)</label>
+            <input name="amount" class="form-control bg-transparent fw-bold text-primary" id="floatAmount" placeholder="0.00" required>
+            <label for="floatAmount">Valor Total (R$)</label>
           </div>
           <button class="btn btn-primary w-100 rounded-pill py-2 fw-bold" type="submit">
-            <i class="bi bi-save2 me-2"></i>Adicionar
+            <i class="bi bi-calendar-plus me-2"></i>Agendar Recebimento
           </button>
         </form>
       </div>
@@ -157,7 +154,11 @@
               </div>
               <div>
                 <h6 class="mb-0 fw-bold">{{ r.debtor_name }}</h6>
-                <small class="text-muted">{{ r.description or 'Dívida Avulsa' }} • {{ r.date.split('-') | reverse | join('/') }}</small>
+                <small class="text-muted">
+                  {{ r.description or 'Dívida Avulsa' }} • 
+                  <span class="text-info">Ref: {{ r.reference_month or 'N/A' }}</span> • 
+                  Venc: {{ r.date.split('-') | reverse | join('/') }}
+                </small>
                 <div class="mt-1 d-sm-none">
                   <span class="text-danger fw-bold currency-value">R$ {{ '{:.2f}'.format(r.amount) }}</span>
                 </div>
