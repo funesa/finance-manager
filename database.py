@@ -214,11 +214,6 @@ def to_df(rows: List[Dict[str, Any]]) -> pd.DataFrame:
     return df
 
 # --- Recurring Expenses ---
-def fetch_recurring_expenses(user_id: int) -> List[Dict[str, Any]]:
-    with get_conn() as conn:
-        rows = conn.execute("SELECT r.*, c.name as category FROM recurring_expenses r LEFT JOIN categories c ON r.category_id = c.id WHERE r.user_id = ?", (user_id,)).fetchall()
-        return [dict(r) for r in rows]
-
 def add_recurring_expense(user_id: int, description: str, amount: float, day_of_month: int, category_id: int):
     with get_conn() as conn:
         conn.execute("INSERT INTO recurring_expenses (user_id, description, amount, day_of_month, category_id) VALUES (?, ?, ?, ?, ?)", (user_id, description, amount, day_of_month, category_id))
