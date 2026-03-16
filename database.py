@@ -259,17 +259,19 @@ def get_receivable_by_id(receivable_id: int, user_id: int) -> Optional[Dict[str,
         row = conn.execute("SELECT * FROM receivables WHERE id = ? AND user_id = ?", (receivable_id, user_id)).fetchone()
         return dict(row) if row else None
 
-def get_receivables_by_user(user_id: int, status: str = None) -> List[sqlite3.Row]:
+def get_receivables_by_user(user_id: int, status: str = None) -> List[Dict[str, Any]]:
     q = "SELECT * FROM receivables WHERE user_id = ? AND recurring_id IS NULL"
     params = [user_id]
     if status: q += " AND status = ?"; params.append(status)
     q += " ORDER BY date DESC"
     with get_conn() as conn:
-        return conn.execute(q, params).fetchall()
+        rows = conn.execute(q, params).fetchall()
+        return [dict(r) for r in rows]
 
-def get_paid_receivables_history(user_id: int) -> List[sqlite3.Row]:
+def get_paid_receivables_history(user_id: int) -> List[Dict[str, Any]]:
     with get_conn() as conn:
-        return conn.execute("SELECT * FROM receivables WHERE user_id = ? AND status = 'paid' ORDER BY date DESC", (user_id,)).fetchall()
+        rows = conn.execute("SELECT * FROM receivables WHERE user_id = ? AND status = 'paid' ORDER BY date DESC", (user_id,)).fetchall()
+        return [dict(r) for r in rows]
 
 def update_receivable_status(receivable_id: int, user_id: int, new_status: str):
     with get_conn() as conn:
