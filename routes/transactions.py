@@ -70,8 +70,16 @@ def index():
     
     summary = db.calculate_filtered_summary(**filter_args)
     
-    # Se estivermos vendo o mês atual (por padrão), incluímos salário no balanço se desejar
-    # (Opcional, mas mantendo a lógica original onde possível)
+    # Se não houver filtro de categoria ou pesquisa, incluímos o salário e bônus no balanço
+    # Isso reflete o saldo real do mês selecionado
+    if not category and not search:
+        salary_info = db.get_salary_info(current_user.id)
+        fixed_income = salary_info.get('salary', 0.0) + salary_info.get('bonus', 0.0)
+        
+        summary['paid_income'] += fixed_income
+        summary['paid_bal'] += fixed_income
+        summary['total_income'] += fixed_income
+        summary['total_bal'] += fixed_income
     
     categories = [c[1] for c in db.fetch_categories(current_user.id)]
     recurring_rules = db.fetch_recurring_expenses(current_user.id)
