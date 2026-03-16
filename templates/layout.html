@@ -316,13 +316,7 @@
         warningModal.show();
 
         document.getElementById('accept-warning-btn').addEventListener('click', function () {
-          fetch("{{ url_for('transactions.accept_warning') }}", {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' }
-          }).then(response => {
-            if (response.ok) { warningModal.hide(); }
-            else { alert('Ocorreu um erro. Por favor, recarregue a página.'); }
-          });
+          warningModal.hide();
         });
       }
     });

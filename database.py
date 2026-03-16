@@ -111,6 +111,12 @@ def get_user_by_id(user_id: int) -> Optional[User]:
         row = conn.execute("SELECT id, email, password_hash FROM users WHERE id = ?", (user_id,)).fetchone()
         return User(id=row['id'], email=row['email'], password_hash=row['password_hash']) if row else None
 
+def update_user_password(user_id: int, new_password: str):
+    hashed_password = generate_password_hash(new_password)
+    with get_conn() as conn:
+        conn.execute("UPDATE users SET password_hash = ? WHERE id = ?", (hashed_password, user_id))
+        conn.commit()
+
 # --- Categories ---
 def fetch_categories(user_id: int) -> List[Dict[str, Any]]:
     with get_conn() as conn:
@@ -148,24 +154,6 @@ def count_transactions(user_id: int, filter_category: str = None, date_from: str
     with get_conn() as conn:
         return conn.execute(q, params).fetchone()[0]
 
-def calculate_filtered_summary(user_id: int, filter_category: str = None, date_from: str = None, date_to: str = None, search: str = None) -> Dict[str, float]:
-    q_base = "FROM transactions t LEFT JOIN categories c ON t.category_id = c.id WHERE t.user_id = ?"
-    params = [user_id]
-    if filter_category: q_base += " AND c.name = ?"; params.append(filter_category)
-    if date_from: q_base += " AND date(t.date) >= date(?)"; params.append(date_from)
-    if date_to: q_base += " AND date(t.date) <= date(?)"; params.append(date_to)
-    if search: q_base += " AND (t.description LIKE ? OR c.name LIKE ? OR t.note LIKE ?)"; params.extend([f"%{search}%"] * 3)
-    
-    with get_conn() as conn:
-        paid_income = conn.execute(f"SELECT SUM(t.amount) {q_base} AND t.type = 'income' AND t.status = 'paid'", params).fetchone()[0] or 0.0
-        paid_expense = conn.execute(f"SELECT SUM(t.amount) {q_base} AND t.type = 'expense' AND t.status = 'paid'", params).fetchone()[0] or 0.0
-        total_income = conn.execute(f"SELECT SUM(t.amount) {q_base} AND t.type = 'income'", params).fetchone()[0] or 0.0
-        total_expense = conn.execute(f"SELECT SUM(t.amount) {q_base} AND t.type = 'expense'", params).fetchone()[0] or 0.0
-        
-    return {
-        "paid_income": paid_income, "paid_expense": paid_expense, "paid_bal": paid_income - paid_expense,
-        "total_income": total_income, "total_expense": total_expense, "total_bal": total_income - total_expense
-    }
 
 def add_transaction(user_id: int, date: str, desc: str, category_id: int, amount: float, typ: str, note: str = "", status: str = "paid", recurring_id: int = None):
     with get_conn() as conn:
