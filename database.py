@@ -207,16 +207,17 @@ def calculate_filtered_summary(user_id: int, filter_category: str = None, date_f
     }
 
 # --- Shared Data Handling ---
-def to_df(rows: List[sqlite3.Row]) -> pd.DataFrame:
+def to_df(rows: List[Dict[str, Any]]) -> pd.DataFrame:
     if not rows: return pd.DataFrame()
-    df = pd.DataFrame([dict(r) for r in rows])
+    df = pd.DataFrame(rows)
     if "amount" in df.columns: df["amount"] = pd.to_numeric(df["amount"], errors="coerce").fillna(0.0)
     return df
 
 # --- Recurring Expenses ---
-def fetch_recurring_expenses(user_id: int) -> List[sqlite3.Row]:
+def fetch_recurring_expenses(user_id: int) -> List[Dict[str, Any]]:
     with get_conn() as conn:
-        return conn.execute("SELECT r.*, c.name as category FROM recurring_expenses r LEFT JOIN categories c ON r.category_id = c.id WHERE r.user_id = ?", (user_id,)).fetchall()
+        rows = conn.execute("SELECT r.*, c.name as category FROM recurring_expenses r LEFT JOIN categories c ON r.category_id = c.id WHERE r.user_id = ?", (user_id,)).fetchall()
+        return [dict(r) for r in rows]
 
 def add_recurring_expense(user_id: int, description: str, amount: float, day_of_month: int, category_id: int):
     with get_conn() as conn:
