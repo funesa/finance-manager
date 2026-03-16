@@ -112,9 +112,10 @@ def get_user_by_id(user_id: int) -> Optional[User]:
         return User(id=row['id'], email=row['email'], password_hash=row['password_hash']) if row else None
 
 # --- Categories ---
-def fetch_categories(user_id: int) -> List[sqlite3.Row]:
+def fetch_categories(user_id: int) -> List[Dict[str, Any]]:
     with get_conn() as conn:
-        return conn.execute("SELECT id, name FROM categories WHERE user_id = ? ORDER BY name", (user_id,)).fetchall()
+        rows = conn.execute("SELECT id, name FROM categories WHERE user_id = ? ORDER BY name", (user_id,)).fetchall()
+        return [dict(r) for r in rows]
 
 def get_category_id(name: str, user_id: int) -> Optional[int]:
     with get_conn() as conn:
@@ -122,7 +123,7 @@ def get_category_id(name: str, user_id: int) -> Optional[int]:
         return row['id'] if row else None
 
 # --- Transactions Core ---
-def fetch_transactions(user_id: int, filter_category: str = None, date_from: str = None, date_to: str = None, search: str = None, limit: int = None, offset: int = None, status: str = None) -> List[sqlite3.Row]:
+def fetch_transactions(user_id: int, filter_category: str = None, date_from: str = None, date_to: str = None, search: str = None, limit: int = None, offset: int = None, status: str = None) -> List[Dict[str, Any]]:
     q = "SELECT t.*, c.name as category FROM transactions t LEFT JOIN categories c ON t.category_id = c.id WHERE t.user_id = ?"
     params = [user_id]
     if status: q += " AND t.status = ?"; params.append(status)
@@ -134,7 +135,8 @@ def fetch_transactions(user_id: int, filter_category: str = None, date_from: str
     if limit: q += " LIMIT ?"; params.append(limit)
     if offset: q += " OFFSET ?"; params.append(offset)
     with get_conn() as conn:
-        return conn.execute(q, params).fetchall()
+        rows = conn.execute(q, params).fetchall()
+        return [dict(r) for r in rows]
 
 def count_transactions(user_id: int, filter_category: str = None, date_from: str = None, date_to: str = None, search: str = None) -> int:
     q = "SELECT COUNT(*) FROM transactions t LEFT JOIN categories c ON t.category_id = c.id WHERE t.user_id = ?"
