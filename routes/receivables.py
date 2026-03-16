@@ -57,19 +57,26 @@ def index():
             pending_manual = db.get_receivables_by_user(current_user.id, status='pending')
             paid_history = db.get_paid_receivables_history(current_user.id)
             
-            # Soma do mês selecionado
-            total_pending_target_month = sum(rule.get('amount', 0) for rule in pending_recurring_list)
+            # Soma do mês selecionado (Inclui o que vence no mês + o que já está atrasado de meses anteriores)
+            total_pending_target_month = sum(float(rule.get('amount', 0)) for rule in pending_recurring_list)
+            
+            # Filtro de data limite para o mês alvo (ex: 2024-03-31)
+            # Se o usuário está vendo o mês atual ou futuro, mostramos o que vence até o fim desse mês
             for row in pending_manual:
                 # row structure: (id, name, desc, amount, date, status)
                 try:
-                    if len(row) >= 5 and row[4][:7] == target_month_str:
-                        total_pending_target_month += float(row[3])
-                except (ValueError, TypeError):
+                    val = float(row[3])
+                    row_date_str = row[4] # YYYY-MM-DD
+                    
+                    # Inclui se for do mês alvo ou ANTES dele
+                    if row_date_str <= target_month_str + "-31":
+                        total_pending_target_month += val
+                except (IndexError, ValueError, TypeError):
                     continue
 
-            # Soma de todos os tempos (Pendentes manuais totais + recorrentes do mês alvo)
+            # Soma de todos os tempos (Tudo o que está pendente no sistema)
             total_pending_all_time = sum(float(row[3]) for row in pending_manual if len(row) >= 4)
-            total_pending_all_time += sum(rule.get('amount', 0) for rule in pending_recurring_list)
+            total_pending_all_time += sum(float(rule.get('amount', 0)) for rule in pending_recurring_list)
             
         except Exception as db_err:
             flash(f"Erro ao carregar dados do banco: {db_err}", "warning")

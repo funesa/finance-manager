@@ -2,216 +2,245 @@
 {% set active_page = "receivables" %}
 
 {% block content %}
-<div class="row mb-3">
+<style>
+  .tracking-wider { letter-spacing: 0.1em; }
+  .bg-darker { background-color: rgba(0, 0, 0, 0.4) !important; backdrop-filter: blur(10px); }
+  .smaller { font-size: 0.7rem; }
+  
+  @media (max-width: 576px) {
+    .display-3 { font-size: 2.5rem; }
+    .dashboard-card { padding: 1.5rem !important; }
+    .list-group-item { padding: 1rem !important; }
+  }
+
+  .form-floating > .form-control:focus ~ label,
+  .form-floating > .form-control:not(:placeholder-shown) ~ label {
+    color: var(--accent-color-light);
+    opacity: 0.8;
+  }
+</style>
+<div class="row g-4">
+  <!-- Summary Section -->
   <div class="col-12">
-    <h4><i class="bi bi-people-fill me-2"></i> Contas a Receber</h4>
-    <p class="text-muted">Acompanhe o que outras pessoas compraram no seu cartão.</p>
-  </div>
-</div>
-
-<div class="row g-3">
-  <div class="col-12">
-    <h5 class="text-white fw-bold"><i class="bi bi-wallet2 me-2"></i>Contas a Receber - {{ target_month_display }}</h5>
-  </div>
-</div>
-
-<div class="col-lg-5 d-flex flex-column gap-3">
-
-  <div class="dashboard-card p-3">
-    <h6 class="card-subtitle mb-3">Adicionar Avulsa / Parcelada</h6>
-    <p class="small text-muted">Use para dívidas únicas ou parceladas (Ex: Pneu da PCX).</p>
-
-    <form method="post" action="{{ url_for('receivables.add_manual') }}">
-      <div class="mb-2">
-        <label class="form-label">Data (ou 1ª Parcela)</label>
-        <input name="date" type="date" class="form-control" value="{{ today }}" required>
+    <div class="dashboard-card p-4 text-center border-0 shadow-lg position-relative overflow-hidden"
+      style="background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%); backdrop-filter: var(--glass-blur); border: 1px solid rgba(239, 68, 68, 0.1) !important;">
+      <div class="position-absolute top-0 end-0 p-3 opacity-10">
+        <i class="bi bi-cash-stack display-1"></i>
       </div>
-      <div class="mb-2">
-        <label class="form-label">Nome da Pessoa</label>
-        <input name="debtor_name" class="form-control" required>
+      
+      <h6 class="text-uppercase small fw-bold text-danger opacity-75 mb-3 tracking-wider">Pendente total até {{ target_month_display }}</h6>
+      <h1 class="display-3 fw-bold text-danger mb-2" style="font-family: 'Outfit';">
+        <span class="currency-value">R$ {{ '{:.2f}'.format(total_pending_this_month|default(0)) }}</span>
+      </h1>
+      <div class="d-flex justify-content-center gap-3 mt-3">
+        <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 px-3 py-2 rounded-pill">
+          <i class="bi bi-exclamation-circle me-1"></i> Acumulado: R$ {{ '{:.2f}'.format(total_pending_all_time|default(0)) }}
+        </span>
       </div>
-      <div class="mb-2">
-        <label class="form-label">Descrição</label>
-        <input name="description" class="form-control" placeholder="Ex: Pneu da PCX" required>
-      </div>
-      <div class="row g-2 mb-3">
-        <div class="col-sm-6">
-          <label class="form-label">Valor (Total)</label>
-          <input name="amount" class="form-control" placeholder="369.84" required>
-        </div>
-        <div class="col-sm-6">
-          <label class="form-label">Parcelas</label>
-          <input name="installments" type="number" min="1" value="1" class="form-control" required>
-        </div>
-      </div>
-      <button class="btn btn-primary" type="submit">Adicionar Dívida</button>
-    </form>
-  </div>
 
-  <div class="dashboard-card p-3">
-    <h6 class="card-subtitle mb-3">Gerenciar Cobranças Recorrentes</h6>
-    <p class="small text-muted">Use para assinaturas (Ex: Spotify, Netflix) que você cobra todo mês.</p>
-    <button class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#recurringModal">
-      <i class="bi bi-gear-fill me-1"></i>
-      Gerenciar Regras Recorrentes
-    </button>
-  </div>
-</div>
-
-<div class="col-lg-7 d-flex flex-column gap-3">
-
-  <div class="dashboard-card p-4 text-center border-0 shadow-lg"
-    style="background: rgba(239, 68, 68, 0.05); backdrop-filter: var(--glass-blur);">
-    <h6 class="text-uppercase small fw-bold text-danger opacity-75 mb-3">PENDENTE ({{ target_month_display }})</h6>
-    <h1 class="display-5 fw-bold text-danger mb-2">
-      <span class="currency-value">R$ {{ '{:.2f}'.format(total_pending_this_month|default(0)) }}</span>
-    </h1>
-    <small class="text-muted">Total acumulado: <span class="currency-value">R$ {{
-        '{:.2f}'.format(total_pending_all_time|default(0)) }}</span></small>
-
-    {% if debug_items %}
-    <hr class="my-4 opacity-10">
-    <div class="text-center">
-      <button class="btn btn-sm btn-outline-secondary rounded-pill px-3" type="button" data-bs-toggle="collapse"
-        data-bs-target="#debugCollapse">
-        <small><i class="bi bi-info-circle me-1"></i> Ver detalhes do cálculo</small>
-      </button>
-    </div>
-    <div class="collapse mt-3" id="debugCollapse">
-      <div class="card card-body bg-black bg-opacity-25 text-white p-3 small border-0 text-start">
-        <h6 class="text-secondary small fw-bold text-uppercase mb-2">Itens somados:</h6>
-        <ul class="list-unstyled mb-0">
-          {% for item in debug_items %}
-          <li class="mb-2 d-flex align-items-center gap-2">
-            <i class="bi bi-dot fs-4 text-danger"></i>
-            <span>{{ item }}</span>
-          </li>
-          {% endfor %}
-        </ul>
-      </div>
-    </div>
-    {% endif %}
-  </div>
-
-  <div class="dashboard-card p-4 border-0">
-    <h6 class="text-uppercase small fw-bold text-secondary mb-4"><i class="bi bi-clock-history me-2"></i>Recorrentes
-      Pendentes ({{ target_month_display }})</h6>
-    {% if pending_recurring %}
-    <div class="table-responsive">
-      <table class="table table-hover align-middle table-mobile-cards">
-        <thead>
-          <tr>
-            <th>Nome</th>
-            <th>Descrição</th>
-            <th>Vencimento</th>
-            <th>Valor</th>
-            <th class="text-end">Ação</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for rule in pending_recurring %}
-          <tr>
-            <td data-label="Nome" class="fw-bold">{{ rule.debtor_name }}</td>
-            <td data-label="Descrição">{{ rule.description or '—' }}</td>
-            <td data-label="Vencimento">Dia {{ rule.day_of_month }}</td>
-            <td data-label="Valor" class="text-danger fw-bold"><span class="currency-value">R$ {{
-                '{:.2f}'.format(rule.amount) }}</span></td>
-            <td data-label="Ação" class="text-end">
-              <form action="{{ url_for('receivables.pay_recurring', recurring_id=rule.id) }}" method="POST">
-                <button type="submit" class="btn btn-success btn-sm rounded-pill px-3">
-                  <i class="bi bi-check-lg me-1"></i> Recebido
-                </button>
-              </form>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-    {% else %}
-    <p class="text-muted small text-center py-4">Nenhuma cobrança recorrente pendente.</p>
-    {% endif %}
-  </div>
-
-  <div class="dashboard-card p-4 border-0">
-    <h6 class="text-uppercase small fw-bold text-secondary mb-4"><i class="bi bi-list-stars me-2"></i>Avulsas /
-      Parceladas (Geral)</h6>
-    {% if pending_manual_receivables %}
-    <div class="table-responsive">
-      <table class="table table-hover align-middle table-mobile-cards">
-        <thead>
-          <tr>
-            <th>Nome</th>
-            <th>Descrição</th>
-            <th>Data</th>
-            <th>Valor</th>
-            <th class="text-end">Ações</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for id, name, desc, amount, date, status in pending_manual_receivables %}
-          <tr>
-            <td data-label="Nome" class="fw-bold">{{ name }}</td>
-            <td data-label="Descrição">{{ desc or '—' }}</td>
-            <td data-label="Data">{{ date.split('-') | reverse | join('/') }}</td>
-            <td data-label="Valor" class="text-danger fw-bold"><span class="currency-value">R$ {{
-                '{:.2f}'.format(amount) }}</span></td>
-            <td data-label="Ações">
-              <div class="d-flex gap-2 justify-content-end">
-                <form action="{{ url_for('receivables.mark_manual_paid', receivable_id=id) }}" method="POST">
-                  <button type="submit" class="btn btn-sm btn-success rounded-circle"
-                    style="width: 32px; height: 32px; padding: 0;" title="Receber">
-                    <i class="bi bi-check-lg"></i>
-                  </button>
-                </form>
-                <button class="btn btn-sm btn-outline-primary rounded-circle"
-                  style="width: 32px; height: 32px; padding: 0;" data-bs-toggle="modal"
-                  data-bs-target="#editReceivableModal" onclick="loadReceivableData('{{ id }}')" title="Editar">
-                  <i class="bi bi-pencil"></i>
-                </button>
-                <form action="{{ url_for('receivables.delete_manual', receivable_id=id) }}" method="POST">
-                  <button type="submit" class="btn btn-sm btn-outline-danger rounded-circle"
-                    style="width: 32px; height: 32px; padding: 0;" title="Excluir"
-                    onclick="return confirm('Tem certeza?');">
-                    <i class="bi bi-trash"></i>
-                  </button>
-                </form>
-              </div>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-    {% else %}
-    <p class="text-muted small text-center py-4">Nenhuma dívida avulsa pendente.</p>
-    {% endif %}
-  </div>
-
-  <div class="dashboard-card p-3">
-    <h6 class="card-subtitle mb-3">Dívidas Pagas (Histórico)</h6>
-    <div style="max-height: 250px; overflow-y: auto;">
-      {% if paid_history %}
-      <ul class="list-group list-group-flush">
-        {% for id, name, desc, amount, date, status in paid_history %}
-        <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent">
-          <div>
-            <strong>{{ name }}</strong>
-            <small class="d-block text-muted">{{ desc or 'Sem descrição' }} ({{ date.split('-') | reverse | join('/')
-              }})</small>
+      {% if debug_items %}
+      <div class="mt-4">
+        <button class="btn btn-sm btn-link text-danger text-decoration-none opacity-50" type="button" data-bs-toggle="collapse" data-bs-target="#debugCollapse">
+          <small><i class="bi bi-info-circle me-1"></i> Detalhes do cálculo</small>
+        </button>
+        <div class="collapse mt-3" id="debugCollapse">
+          <div class="card card-body bg-black bg-opacity-25 text-white p-3 small border-0 text-start rounded-4">
+            <ul class="list-unstyled mb-0 m-0">
+              {% for item in debug_items %}
+              <li class="mb-1 small opacity-75">• {{ item }}</li>
+              {% endfor %}
+            </ul>
           </div>
-          <span class="badge bg-success rounded-pill"><span class="currency-value">R$ {{
-              '{:.2f}'.format(amount) }}</span></span>
-        </li>
-        {% endfor %}
-      </ul>
-      {% else %}
-      <p class="text-muted small mt-2">Nenhum registro de dívida paga.</p>
+        </div>
+      </div>
       {% endif %}
     </div>
   </div>
 
-</div>
+  <!-- Actions and Lists -->
+  <div class="col-lg-4">
+    <div class="d-flex flex-column gap-4">
+      <!-- Add Manual Item -->
+      <div class="dashboard-card p-4 border-0 shadow-sm rounded-4">
+        <h5 class="fw-bold mb-3" style="font-family: 'Outfit';"><i class="bi bi-plus-circle-fill text-primary me-2"></i>Nova Dívida</h5>
+        <p class="small text-muted mb-4">Registre compras avulsas ou parceladas feitas por terceiros.</p>
+
+        <form method="post" action="{{ url_for('receivables.add_manual') }}">
+          <div class="form-floating mb-3">
+            <input name="debtor_name" class="form-control bg-transparent" id="floatName" placeholder="Nome" required>
+            <label for="floatName">Nome da Pessoa</label>
+          </div>
+          <div class="form-floating mb-3">
+            <input name="description" class="form-control bg-transparent" id="floatDesc" placeholder="Descrição" required>
+            <label for="floatDesc">Descrição (ex: Pneu PCX)</label>
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col-7">
+              <div class="form-floating">
+                <input name="amount" class="form-control bg-transparent" id="floatAmount" placeholder="0.00" required>
+                <label for="floatAmount">Valor Total (R$)</label>
+              </div>
+            </div>
+            <div class="col-5">
+              <div class="form-floating">
+                <input name="installments" type="number" min="1" value="1" class="form-control bg-transparent" id="floatInstall" required>
+                <label for="floatInstall">Parcelas</label>
+              </div>
+            </div>
+          </div>
+          <div class="form-floating mb-4">
+            <input name="date" type="date" class="form-control bg-transparent" id="floatDate" value="{{ today }}" required>
+            <label for="floatDate">Data (ou 1ª Parcela)</label>
+          </div>
+          <button class="btn btn-primary w-100 rounded-pill py-2 fw-bold" type="submit">
+            <i class="bi bi-save2 me-2"></i>Adicionar
+          </button>
+        </form>
+      </div>
+
+      <!-- Recurring Rules -->
+      <div class="dashboard-card p-4 border-0 shadow-sm rounded-4" style="background: rgba(94, 234, 212, 0.05);">
+        <h5 class="fw-bold mb-3" style="font-family: 'Outfit';"><i class="bi bi-arrow-repeat text-info me-2"></i>Contas Fixas</h5>
+        <p class="small text-muted mb-4">Assinaturas compartilhadas que ocorrem todo mês.</p>
+        <button class="btn btn-outline-info w-100 rounded-pill py-2" data-bs-toggle="modal" data-bs-target="#recurringModal">
+          <i class="bi bi-gear-fill me-2"></i>Configurar Regras
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pending Lists -->
+  <div class="col-lg-8">
+    <div class="d-flex flex-column gap-4">
+      
+      <!-- Recurring Items for the Month -->
+      <div class="dashboard-card p-4 border-0 shadow-sm rounded-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h5 class="fw-bold mb-0" style="font-family: 'Outfit';">
+            <i class="bi bi-clock-history text-warning me-2"></i>Pendentes no Mês
+          </h5>
+          <span class="badge bg-warning bg-opacity-10 text-warning rounded-pill px-3">{{ target_month_display }}</span>
+        </div>
+
+        {% if pending_recurring or pending_manual_receivables %}
+        <div class="list-group list-group-flush gap-3">
+          <!-- Recorrentes -->
+          {% for rule in pending_recurring %}
+          <div class="list-group-item bg-transparent border rounded-4 p-3 d-flex justify-content-between align-items-center shadow-sm">
+            <div class="d-flex align-items-center gap-3">
+              <div class="rounded-circle bg-info bg-opacity-10 p-3 text-info d-none d-sm-block">
+                <i class="bi bi-arrow-repeat fs-4"></i>
+              </div>
+              <div>
+                <h6 class="mb-0 fw-bold">{{ rule.debtor_name }}</h6>
+                <small class="text-muted">{{ rule.description or 'Assinatura' }} • Dia {{ rule.day_of_month }}</small>
+                <div class="mt-1 d-sm-none">
+                  <span class="text-danger fw-bold currency-value">R$ {{ '{:.2f}'.format(rule.amount) }}</span>
+                </div>
+              </div>
+            </div>
+            <div class="text-end d-flex align-items-center gap-3">
+              <div class="d-none d-sm-block text-end me-2">
+                <span class="d-block text-danger fw-bold fs-5 currency-value">R$ {{ '{:.2f}'.format(rule.amount) }}</span>
+                <span class="badge bg-info bg-opacity-10 text-info smaller">RECORRENTE</span>
+              </div>
+              <form action="{{ url_for('receivables.pay_recurring', recurring_id=rule.id) }}" method="POST">
+                <button type="submit" class="btn btn-success rounded-pill px-3 py-2 btn-sm">
+                  <i class="bi bi-check-lg me-1"></i> <span class="d-none d-md-inline">Recebido</span>
+                </button>
+              </form>
+            </div>
+          </div>
+          {% endfor %}
+
+          <!-- Manuais / Parceladas -->
+          {% for id, name, desc, amount, date, status in pending_manual_receivables %}
+          <div class="list-group-item bg-transparent border rounded-4 p-3 d-flex justify-content-between align-items-center shadow-sm">
+            <div class="d-flex align-items-center gap-3">
+              <div class="rounded-circle bg-primary bg-opacity-10 p-3 text-primary d-none d-sm-block">
+                <i class="bi bi-person-fill fs-4"></i>
+              </div>
+              <div>
+                <h6 class="mb-0 fw-bold">{{ name }}</h6>
+                <small class="text-muted">{{ desc or 'Dívida Avulsa' }} • {{ date.split('-') | reverse | join('/') }}</small>
+                <div class="mt-1 d-sm-none">
+                  <span class="text-danger fw-bold currency-value">R$ {{ '{:.2f}'.format(amount) }}</span>
+                </div>
+              </div>
+            </div>
+            <div class="text-end d-flex align-items-center gap-2 gap-md-3">
+              <div class="d-none d-sm-block text-end me-2">
+                <span class="d-block text-danger fw-bold fs-5 currency-value">R$ {{ '{:.2f}'.format(amount) }}</span>
+              </div>
+              <div class="d-flex gap-2">
+                <form action="{{ url_for('receivables.mark_manual_paid', receivable_id=id) }}" method="POST">
+                  <button type="submit" class="btn btn-success rounded-pill px-3 py-2 btn-sm">
+                    <i class="bi bi-check-lg me-1"></i> <span class="d-none d-md-inline">Recebido</span>
+                  </button>
+                </form>
+                <div class="dropdown">
+                  <button class="btn btn-outline-secondary rounded-pill p-2 btn-sm" data-bs-toggle="dropdown">
+                    <i class="bi bi-three-dots-vertical"></i>
+                  </button>
+                  <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 bg-darker">
+                    <li><a class="dropdown-item py-2" href="#" data-bs-toggle="modal" data-bs-target="#editReceivableModal" onclick="loadReceivableData('{{ id }}')">
+                      <i class="bi bi-pencil me-2"></i>Editar</a></li>
+                    <li><form action="{{ url_for('receivables.delete_manual', receivable_id=id) }}" method="POST" class="d-inline">
+                      <button type="submit" class="dropdown-item text-danger py-2" onclick="return confirm('Apagar dívida?');">
+                        <i class="bi bi-trash me-2"></i>Excluir</button>
+                    </form></li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-5 opacity-50">
+          <i class="bi bi-check2-all display-4 mb-3 d-block text-success"></i>
+          <p>Tudo em dia! Nenhuma pendência encontrada.</p>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- History / Paid -->
+      <div class="dashboard-card p-4 border-0 shadow-sm rounded-4" style="background: rgba(34, 197, 94, 0.02);">
+        <button class="btn btn-link w-100 text-start d-flex justify-content-between align-items-center text-decoration-none p-0 text-white" 
+                type="button" data-bs-toggle="collapse" data-bs-target="#paidHistoryCollapse">
+          <h5 class="fw-bold mb-0" style="font-family: 'Outfit';">
+            <i class="bi bi-journal-check text-success me-2"></i>Histórico de Recebidos
+          </h5>
+          <i class="bi bi-chevron-down opacity-50"></i>
+        </button>
+        
+        <div class="collapse mt-4" id="paidHistoryCollapse">
+          {% if paid_history %}
+          <div class="list-group list-group-flush gap-2">
+            {% for id, name, desc, amount, date, status in paid_history %}
+            <div class="list-group-item bg-transparent border-0 border-bottom border-secondary border-opacity-10 py-3 d-flex justify-content-between align-items-center px-0">
+              <div class="opacity-75">
+                <h6 class="mb-0 fw-medium">{{ name }}</h6>
+                <small class="text-muted">{{ desc or 'Dívida' }} • {{ date.split('-') | reverse | join('/') }}</small>
+              </div>
+              <div class="text-end">
+                <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-2 currency-value">R$ {{ '{:.2f}'.format(amount) }}</span>
+                <form action="{{ url_for('receivables.delete_manual', receivable_id=id) }}" method="POST" class="d-inline ms-2">
+                  <button type="submit" class="btn btn-link btn-sm text-danger opacity-50 p-0" onclick="return confirm('Apagar histórico?');">
+                    <i class="bi bi-x-circle"></i>
+                  </button>
+                </form>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}
+          <p class="text-muted small text-center py-3">Nenhum histórico disponível.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <div class="modal fade" id="editReceivableModal" tabindex="-1" aria-hidden="true">
