@@ -733,7 +733,8 @@ def get_paid_receivables_history(user_id):
     with get_conn() as conn:
         cur = conn.cursor()
         cur.execute(q, (user_id,))
-        return cur.fetchall()
+        rows = cur.fetchall()
+        return [tuple(col if col is not None else (0.0 if i==3 else "") for i, col in enumerate(row)) for row in rows]
 
 
 def update_receivable_status(receivable_id, user_id, new_status):
@@ -793,7 +794,13 @@ def get_recurring_receivables_by_user(user_id):
         cur.execute(q, (user_id,))
         # Retorna como lista de dicionários para facilitar
         rows = cur.fetchall()
-        return [{'id': r[0], 'debtor_name': r[1], 'description': r[2], 'amount': r[3], 'day_of_month': r[4]} for r in rows]
+        return [{
+            'id': r[0], 
+            'debtor_name': r[1] or "Desconhecido", 
+            'description': r[2] or "", 
+            'amount': float(r[3]) if r[3] is not None else 0.0, 
+            'day_of_month': int(r[4]) if r[4] is not None else 1
+        } for r in rows]
 
 def get_paid_recurring_ids_for_month(user_id, month_str):
     """Busca os IDs das regras recorrentes que JÁ FORAM PAGAS este mês."""
@@ -809,7 +816,7 @@ def get_paid_recurring_ids_for_month(user_id, month_str):
         cur = conn.cursor()
         cur.execute(q, (user_id, month_str))
         # Retorna um set (conjunto) para busca rápida, ex: {1, 5, 10}
-        return {row[0] for row in cur.fetchall()}
+        return {row[0] for row in cur.fetchall() if row[0] is not None}
 
 def delete_recurring_receivable(recurring_id, user_id):
     """Exclui uma REGRA de conta a receber recorrente."""

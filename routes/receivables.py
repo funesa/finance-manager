@@ -13,62 +13,103 @@ receivables_bp = Blueprint('receivables', __name__)
 
 @receivables_bp.route("/receivables")
 @login_required
+@receivables_bp.route("/receivables")
+@login_required
 def index():
     """Página principal de Contas a Receber."""
     
     try:
-        locale.setlocale(locale.LC_TIME, 'pt_BR.UTF-8')
-    except locale.Error:
         try:
-            locale.setlocale(locale.LC_TIME, 'Portuguese_Brazil.1252')
+            locale.setlocale(locale.LC_TIME, 'pt_BR.UTF-8')
         except locale.Error:
-            locale.setlocale(locale.LC_TIME, '')
+            try:
+                locale.setlocale(locale.LC_TIME, 'Portuguese_Brazil.1252')
+            except locale.Error:
+                locale.setlocale(locale.LC_TIME, '')
 
-    # Mantemos uma visualização simples por mês se desejar
-    month_val = request.args.get('month')
-    if month_val:
-        try:
-            target_date = datetime.strptime(month_val, '%Y-%m')
-        except ValueError:
+        # Mantemos uma visualização simples por mês se desejar
+        month_val = request.args.get('month')
+        if month_val:
+            try:
+                target_date = datetime.strptime(month_val, '%Y-%m')
+            except ValueError:
+                target_date = datetime.now()
+        else:
             target_date = datetime.now()
-    else:
-        target_date = datetime.now()
 
-    target_month_str = target_date.strftime('%Y-%m')
-    target_month_display = target_date.strftime('%b/%Y').capitalize()
-    
-    recurring_rules = db.get_recurring_receivables_by_user(current_user.id)
-    paid_in_target_month_ids = db.get_paid_recurring_ids_for_month(current_user.id, target_month_str)
-    pending_recurring_list = [
-        rule for rule in recurring_rules if rule['id'] not in paid_in_target_month_ids
-    ]
-    
-    pending_manual = db.get_receivables_by_user(current_user.id, status='pending')
-    paid_history = db.get_paid_receivables_history(current_user.id)
-    
-    # Soma do mês selecionado
-    total_pending_target_month = sum(rule['amount'] for rule in pending_recurring_list)
-    total_pending_target_month += sum(row[3] for row in pending_manual if row[4][:7] == target_month_str)
+        target_month_str = target_date.strftime('%Y-%m')
+        target_month_display = target_date.strftime('%b/%Y').capitalize()
+        
+        # Initialize variables with defaults
+        recurring_rules = []
+        paid_in_target_month_ids = set()
+        pending_manual = []
+        paid_history = []
+        total_pending_target_month = 0.0
+        total_pending_all_time = 0.0
+        debug_info = []
 
-    # Soma de todos os tempos (Pendentes manuais totais + recorrentes do mês alvo)
-    total_pending_all_time = sum(row[3] for row in pending_manual)
-    total_pending_all_time += sum(rule['amount'] for rule in pending_recurring_list)
+        try:
+            recurring_rules = db.get_recurring_receivables_by_user(current_user.id)
+            paid_in_target_month_ids = db.get_paid_recurring_ids_for_month(current_user.id, target_month_str)
+            pending_recurring_list = [
+                rule for rule in recurring_rules if rule['id'] not in paid_in_target_month_ids
+            ]
+            
+            pending_manual = db.get_receivables_by_user(current_user.id, status='pending')
+            paid_history = db.get_paid_receivables_history(current_user.id)
+            
+            # Soma do mês selecionado
+            total_pending_target_month = sum(rule.get('amount', 0) for rule in pending_recurring_list)
+            for row in pending_manual:
+                # row structure: (id, name, desc, amount, date, status)
+                try:
+                    if len(row) >= 5 and row[4][:7] == target_month_str:
+                        total_pending_target_month += float(row[3])
+                except (ValueError, TypeError):
+                    continue
 
-    return render_template('receivables.html', 
-                           pending_manual_receivables=pending_manual,
-                           pending_recurring=pending_recurring_list,
-                           all_recurring_rules=recurring_rules,
-                           paid_history=paid_history,
-                           
-                           total_pending_this_month=total_pending_target_month,
-                           total_pending_all_time=total_pending_all_time,
-                           target_month_display=target_month_display,
-                           target_month_str=target_month_str,
-                           
-                           today=datetime.now().strftime('%Y-%m-%d'),
-                           current_day=datetime.now().day,
-                           datetime=datetime
-                           )
+            # Soma de todos os tempos (Pendentes manuais totais + recorrentes do mês alvo)
+            total_pending_all_time = sum(float(row[3]) for row in pending_manual if len(row) >= 4)
+            total_pending_all_time += sum(rule.get('amount', 0) for rule in pending_recurring_list)
+            
+        except Exception as db_err:
+            flash(f"Erro ao carregar dados do banco: {db_err}", "warning")
+            debug_info.append(f"DB Error: {db_err}")
+            pending_recurring_list = []
+
+        return render_template('receivables.html', 
+                               pending_manual_receivables=pending_manual,
+                               pending_recurring=pending_recurring_list,
+                               all_recurring_rules=recurring_rules,
+                               paid_history=paid_history,
+                               
+                               total_pending_this_month=total_pending_target_month,
+                               total_pending_all_time=total_pending_all_time,
+                               target_month_display=target_month_display,
+                               target_month_str=target_month_str,
+                               
+                               today=datetime.now().strftime('%Y-%m-%d'),
+                               current_day=datetime.now().day,
+                               datetime=datetime,
+                               debug_items=debug_info
+                               )
+    except Exception as e:
+        flash(f"Ocorreu um erro inesperado ao carregar a página: {e}", "danger")
+        return render_template('receivables.html', 
+                               pending_manual_receivables=[],
+                               pending_recurring=[],
+                               all_recurring_rules=[],
+                               paid_history=[],
+                               total_pending_this_month=0,
+                               total_pending_all_time=0,
+                               target_month_display="Erro",
+                               target_month_str=datetime.now().strftime('%Y-%m'),
+                               today=datetime.now().strftime('%Y-%m-%d'),
+                               current_day=datetime.now().day,
+                               datetime=datetime,
+                               debug_items=[str(e)]
+                               )
 
 # ... (restante do arquivo 'receivables.py' permanece o mesmo) ...
 
