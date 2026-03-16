@@ -9,7 +9,6 @@ from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 
 # --- Configuração do Banco de Dados ---
-# Tenta obter o caminho do .env primeiro, senão usa o padrão
 DATABASE_PATH_ENV = os.environ.get("DATABASE_PATH")
 if DATABASE_PATH_ENV:
     DB = Path(DATABASE_PATH_ENV)
@@ -18,9 +17,7 @@ else:
     DB = BASE / "finance.db"
 
 def get_conn() -> sqlite3.Connection:
-    """Retorna uma conexão com o banco de dados com suporte a dicionário."""
     conn = sqlite3.connect(DB)
-    # Habilita o acesso por nome de coluna (dict-like)
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -44,146 +41,26 @@ class User(UserMixin):
 
 # --- Inicialização do DB ---
 def init_db():
-    """Cria as tabelas do banco de dados se elas não existirem."""
     with get_conn() as conn:
         cur = conn.cursor()
-        
-        # Tabela de Usuários
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS users (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                email TEXT NOT NULL UNIQUE,
-                password_hash TEXT NOT NULL
-            );
-        """)
-        
-        # Tabela de Categorias
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS categories (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL,
-                user_id INTEGER NOT NULL,
-                FOREIGN KEY (user_id) REFERENCES users (id)
-            );
-        """)
-        
-        # Tabela de Transações
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS transactions (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                date TEXT NOT NULL,
-                description TEXT,
-                amount REAL NOT NULL,
-                type TEXT NOT NULL,
-                category_id INTEGER,
-                note TEXT,
-                user_id INTEGER NOT NULL,
-                status TEXT NOT NULL DEFAULT 'paid',
-                recurring_id INTEGER, 
-                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (user_id) REFERENCES users (id),
-                FOREIGN KEY (category_id) REFERENCES categories (id),
-                FOREIGN KEY (recurring_id) REFERENCES recurring_expenses (id)
-            );
-        """)
-
-        # Tabela de Despesas Recorrentes
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS recurring_expenses (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id INTEGER NOT NULL,
-                description TEXT NOT NULL,
-                amount REAL NOT NULL,
-                day_of_month INTEGER NOT NULL,
-                category_id INTEGER,
-                FOREIGN KEY (user_id) REFERENCES users (id),
-                FOREIGN KEY (category_id) REFERENCES categories (id)
-            );
-        """)
-        
-        # Tabela de Orçamentos
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS budgets (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                category_id INTEGER NOT NULL,
-                amount REAL NOT NULL,
-                month TEXT NOT NULL,
-                user_id INTEGER NOT NULL,
-                UNIQUE(category_id, month, user_id),
-                FOREIGN KEY (user_id) REFERENCES users (id),
-                FOREIGN KEY (category_id) REFERENCES categories (id)
-            );
-        """)
-
-        # Tabela de Salário e Bonificações
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS salary_info (
-                user_id INTEGER PRIMARY KEY,
-                salary REAL NOT NULL DEFAULT 0,
-                bonus REAL NOT NULL DEFAULT 0,
-                FOREIGN KEY (user_id) REFERENCES users (id)
-            );
-        """)
-
-        # Tabela de Cofrinhos
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS savings (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id INTEGER NOT NULL,
-                name TEXT NOT NULL,
-                bank TEXT,
-                bank_code TEXT,
-                balance REAL NOT NULL DEFAULT 0,
-                cdi_rate REAL DEFAULT NULL,
-                last_rate_update TEXT,
-                currency TEXT DEFAULT 'BRL',
-                FOREIGN KEY (user_id) REFERENCES users (id)
-            );
-        """)
-
-        # Tabela de Recebíveis
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS receivables (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id INTEGER NOT NULL,
-                debtor_name TEXT NOT NULL,
-                description TEXT,
-                amount REAL NOT NULL,
-                date TEXT NOT NULL,
-                status TEXT NOT NULL DEFAULT 'pending',
-                recurring_id INTEGER, 
-                FOREIGN KEY (user_id) REFERENCES users (id),
-                FOREIGN KEY (recurring_id) REFERENCES recurring_receivables (id)
-            );
-        """)
-        
-        # Tabela de Regras Recorrentes de Recebíveis
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS recurring_receivables (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id INTEGER NOT NULL,
-                debtor_name TEXT NOT NULL,
-                description TEXT,
-                amount REAL NOT NULL,
-                day_of_month INTEGER NOT NULL,
-                FOREIGN KEY (user_id) REFERENCES users (id)
-            );
-        """)
-
-        # Migrações Automáticas
+        cur.execute("""CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, email TEXT NOT NULL UNIQUE, password_hash TEXT NOT NULL);""")
+        cur.execute("""CREATE TABLE IF NOT EXISTS categories (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, user_id INTEGER NOT NULL, FOREIGN KEY (user_id) REFERENCES users (id));""")
+        cur.execute("""CREATE TABLE IF NOT EXISTS transactions (id INTEGER PRIMARY KEY AUTOINCREMENT, date TEXT NOT NULL, description TEXT, amount REAL NOT NULL, type TEXT NOT NULL, category_id INTEGER, note TEXT, user_id INTEGER NOT NULL, status TEXT NOT NULL DEFAULT 'paid', recurring_id INTEGER, created_at TEXT DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (user_id) REFERENCES users (id), FOREIGN KEY (category_id) REFERENCES categories (id));""")
+        cur.execute("""CREATE TABLE IF NOT EXISTS recurring_expenses (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, description TEXT NOT NULL, amount REAL NOT NULL, day_of_month INTEGER NOT NULL, category_id INTEGER, FOREIGN KEY (user_id) REFERENCES users (id), FOREIGN KEY (category_id) REFERENCES categories (id));""")
+        cur.execute("""CREATE TABLE IF NOT EXISTS budgets (id INTEGER PRIMARY KEY AUTOINCREMENT, category_id INTEGER NOT NULL, amount REAL NOT NULL, month TEXT NOT NULL, user_id INTEGER NOT NULL, UNIQUE(category_id, month, user_id), FOREIGN KEY (user_id) REFERENCES users (id), FOREIGN KEY (category_id) REFERENCES categories (id));""")
+        cur.execute("""CREATE TABLE IF NOT EXISTS salary_info (user_id INTEGER PRIMARY KEY, salary REAL NOT NULL DEFAULT 0, bonus REAL NOT NULL DEFAULT 0, FOREIGN KEY (user_id) REFERENCES users (id));""")
+        cur.execute("""CREATE TABLE IF NOT EXISTS savings (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, name TEXT NOT NULL, bank TEXT, bank_code TEXT, balance REAL NOT NULL DEFAULT 0, cdi_rate REAL DEFAULT NULL, last_rate_update TEXT, currency TEXT DEFAULT 'BRL', FOREIGN KEY (user_id) REFERENCES users (id));""")
+        cur.execute("""CREATE TABLE IF NOT EXISTS receivables (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, debtor_name TEXT NOT NULL, description TEXT, amount REAL NOT NULL, date TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'pending', recurring_id INTEGER, FOREIGN KEY (user_id) REFERENCES users (id));""")
+        cur.execute("""CREATE TABLE IF NOT EXISTS recurring_receivables (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, debtor_name TEXT NOT NULL, description TEXT, amount REAL NOT NULL, day_of_month INTEGER NOT NULL, FOREIGN KEY (user_id) REFERENCES users (id));""")
         migrations = [
-            ("receivables", "ALTER TABLE receivables ADD COLUMN recurring_id INTEGER REFERENCES recurring_receivables(id)"),
+            ("receivables", "ALTER TABLE receivables ADD COLUMN recurring_id INTEGER"),
             ("transactions", "ALTER TABLE transactions ADD COLUMN status TEXT NOT NULL DEFAULT 'paid'"),
             ("transactions", "ALTER TABLE transactions ADD COLUMN recurring_id INTEGER"),
             ("transactions", "ALTER TABLE transactions ADD COLUMN created_at TEXT DEFAULT CURRENT_TIMESTAMP")
         ]
-        
         for table, sql in migrations:
-            try:
-                cur.execute(sql)
-            except sqlite3.OperationalError:
-                pass # Coluna já existe
-
+            try: cur.execute(sql)
+            except sqlite3.OperationalError: pass
         conn.commit()
 
 # --- Funções de Usuário ---
@@ -193,7 +70,6 @@ def create_user(email: str, password: str) -> int:
         cur = conn.cursor()
         cur.execute("INSERT INTO users (email, password_hash) VALUES (?, ?)", (email, hashed_password))
         user_id = cur.lastrowid
-        
         default_categories = ["Salário", "Aluguel", "Mercado", "Transporte", "Lazer", "Contas", "Saúde", "Outros"]
         cat_data = [(name, user_id) for name in default_categories]
         cur.executemany("INSERT INTO categories (name, user_id) VALUES (?, ?)", cat_data)
@@ -246,32 +122,14 @@ def get_category_id(name: str, user_id: int) -> Optional[int]:
 def fetch_transactions(user_id: int, filter_category: str = None, date_from: str = None, date_to: str = None, search: str = None, limit: int = None, offset: int = None, status: str = None) -> List[sqlite3.Row]:
     q = "SELECT t.*, c.name as category FROM transactions t LEFT JOIN categories c ON t.category_id = c.id WHERE t.user_id = ?"
     params = [user_id]
-    
-    if status:
-        q += " AND t.status = ?"
-        params.append(status)
-    if filter_category:
-        q += " AND c.name = ?"
-        params.append(filter_category)
-    if date_from:
-        q += " AND date(t.date) >= date(?)"
-        params.append(date_from)
-    if date_to:
-        q += " AND date(t.date) <= date(?)"
-        params.append(date_to)
-    if search:
-        q += " AND (t.description LIKE ? OR c.name LIKE ? OR t.note LIKE ?)"
-        params.extend([f"%{search}%", f"%{search}%", f"%{search}%"])
-        
+    if status: q += " AND t.status = ?"; params.append(status)
+    if filter_category: q += " AND c.name = ?"; params.append(filter_category)
+    if date_from: q += " AND date(t.date) >= date(?)"; params.append(date_from)
+    if date_to: q += " AND date(t.date) <= date(?)"; params.append(date_to)
+    if search: q += " AND (t.description LIKE ? OR c.name LIKE ? OR t.note LIKE ?)"; params.extend([f"%{search}%", f"%{search}%", f"%{search}%"])
     q += " ORDER BY date(t.date) DESC, t.id DESC"
-    
-    if limit:
-        q += " LIMIT ?"
-        params.append(limit)
-    if offset:
-        q += " OFFSET ?"
-        params.append(offset)
-        
+    if limit: q += " LIMIT ?"; params.append(limit)
+    if offset: q += " OFFSET ?"; params.append(offset)
     with get_conn() as conn:
         cur = conn.cursor()
         cur.execute(q, params)
@@ -280,20 +138,10 @@ def fetch_transactions(user_id: int, filter_category: str = None, date_from: str
 def count_transactions(user_id: int, filter_category: str = None, date_from: str = None, date_to: str = None, search: str = None) -> int:
     q = "SELECT COUNT(*) FROM transactions t LEFT JOIN categories c ON t.category_id = c.id WHERE t.user_id = ?"
     params = [user_id]
-    
-    if filter_category:
-        q += " AND c.name = ?"
-        params.append(filter_category)
-    if date_from:
-        q += " AND date(t.date) >= date(?)"
-        params.append(date_from)
-    if date_to:
-        q += " AND date(t.date) <= date(?)"
-        params.append(date_to)
-    if search:
-        q += " AND (t.description LIKE ? OR c.name LIKE ? OR t.note LIKE ?)"
-        params.extend([f"%{search}%", f"%{search}%", f"%{search}%"])
-        
+    if filter_category: q += " AND c.name = ?"; params.append(filter_category)
+    if date_from: q += " AND date(t.date) >= date(?)"; params.append(date_from)
+    if date_to: q += " AND date(t.date) <= date(?)"; params.append(date_to)
+    if search: q += " AND (t.description LIKE ? OR c.name LIKE ? OR t.note LIKE ?)"; params.extend([f"%{search}%", f"%{search}%", f"%{search}%"])
     with get_conn() as conn:
         cur = conn.cursor()
         cur.execute(q, params)
@@ -302,8 +150,7 @@ def count_transactions(user_id: int, filter_category: str = None, date_from: str
 def add_transaction(user_id: int, date: str, desc: str, category_id: int, amount: float, typ: str, note: str = "", status: str = "paid", recurring_id: int = None):
     with get_conn() as conn:
         cur = conn.cursor()
-        cur.execute("INSERT INTO transactions(user_id, date, description, category_id, amount, type, note, status, recurring_id) VALUES(?,?,?,?,?,?,?,?,?)",
-                    (user_id, date, desc, category_id, amount, typ, note, status, recurring_id))
+        cur.execute("INSERT INTO transactions(user_id, date, description, category_id, amount, type, note, status, recurring_id) VALUES(?,?,?,?,?,?,?,?,?)", (user_id, date, desc, category_id, amount, typ, note, status, recurring_id))
         conn.commit()
 
 def delete_transaction(trans_id: int, user_id: int):
@@ -315,55 +162,53 @@ def delete_transaction(trans_id: int, user_id: int):
 def update_transaction(trans_id: int, user_id: int, date: str, desc: str, category_id: int, amount: float, typ: str, note: str = "", status: str = "paid"):
     with get_conn() as conn:
         cur = conn.cursor()
-        cur.execute("""
-            UPDATE transactions
-            SET date = ?, description = ?, category_id = ?, amount = ?, type = ?, note = ?, status = ?
-            WHERE id = ? AND user_id = ?
-        """, (date, desc, category_id, amount, typ, note, status, trans_id, user_id))
+        cur.execute("UPDATE transactions SET date = ?, description = ?, category_id = ?, amount = ?, type = ?, note = ?, status = ? WHERE id = ? AND user_id = ?", (date, desc, category_id, amount, typ, note, status, trans_id, user_id))
         conn.commit()
 
 # --- Resumo e Utilitários ---
 def calculate_filtered_summary(user_id: int, filter_category: str = None, date_from: str = None, date_to: str = None, search: str = None) -> Dict[str, float]:
     base_q = "SELECT SUM(t.amount) FROM transactions t LEFT JOIN categories c ON t.category_id = c.id WHERE t.user_id = ?"
     params = [user_id]
-    
-    if filter_category:
-        base_q += " AND c.name = ?"
-        params.append(filter_category)
-    if date_from:
-        base_q += " AND date(t.date) >= date(?)"
-        params.append(date_from)
-    if date_to:
-        base_q += " AND date(t.date) <= date(?)"
-        params.append(date_to)
-    if search:
-        base_q += " AND (t.description LIKE ? OR c.name LIKE ? OR t.note LIKE ?)"
-        params.extend([f"%{search}%", f"%{search}%", f"%{search}%"])
-
+    if filter_category: base_q += " AND c.name = ?"; params.append(filter_category)
+    if date_from: base_q += " AND date(t.date) >= date(?)"; params.append(date_from)
+    if date_to: base_q += " AND date(t.date) <= date(?)"; params.append(date_to)
+    if search: base_q += " AND (t.description LIKE ? OR c.name LIKE ? OR t.note LIKE ?)"; params.extend([f"%{search}%", f"%{search}%", f"%{search}%"])
     with get_conn() as conn:
         cur = conn.cursor()
-        # Pagos
         cur.execute(base_q + " AND t.status = 'paid' AND t.type = 'income'", params)
         paid_inc = cur.fetchone()[0] or 0.0
         cur.execute(base_q + " AND t.status = 'paid' AND t.type = 'expense'", params)
         paid_exp = cur.fetchone()[0] or 0.0
-        # Totais
         cur.execute(base_q + " AND t.type = 'income'", params)
         total_inc = cur.fetchone()[0] or 0.0
         cur.execute(base_q + " AND t.type = 'expense'", params)
         total_exp = cur.fetchone()[0] or 0.0
-        
-    return {
-        "paid_income": paid_inc, "paid_expense": paid_exp, "paid_bal": paid_inc - paid_exp,
-        "total_income": total_inc, "total_expense": total_exp, "total_bal": total_inc - total_exp
-    }
+    return {"paid_income": paid_inc, "paid_expense": paid_exp, "paid_bal": paid_inc - paid_exp, "total_income": total_inc, "total_expense": total_exp, "total_bal": total_inc - total_exp}
 
 def to_df(rows: List[sqlite3.Row]) -> pd.DataFrame:
     if not rows: return pd.DataFrame()
     df = pd.DataFrame([dict(r) for r in rows])
-    if "amount" in df.columns:
-        df["amount"] = pd.to_numeric(df["amount"], errors="coerce").fillna(0.0)
+    if "amount" in df.columns: df["amount"] = pd.to_numeric(df["amount"], errors="coerce").fillna(0.0)
     return df
+
+# --- Despesas Recorrentes (Expenses) ---
+def add_recurring_expense(user_id: int, description: str, amount: float, day_of_month: int, category_id: int):
+    with get_conn() as conn:
+        cur = conn.cursor()
+        cur.execute("INSERT INTO recurring_expenses (user_id, description, amount, day_of_month, category_id) VALUES (?, ?, ?, ?, ?)", (user_id, description, amount, day_of_month, category_id))
+        conn.commit()
+
+def fetch_recurring_expenses(user_id: int) -> List[sqlite3.Row]:
+    with get_conn() as conn:
+        cur = conn.cursor()
+        cur.execute("SELECT r.*, c.name as category FROM recurring_expenses r LEFT JOIN categories c ON r.category_id = c.id WHERE r.user_id = ?", (user_id,))
+        return cur.fetchall()
+
+def delete_recurring_expense(rule_id: int, user_id: int):
+    with get_conn() as conn:
+        cur = conn.cursor()
+        cur.execute("DELETE FROM recurring_expenses WHERE id = ? AND user_id = ?", (rule_id, user_id))
+        conn.commit()
 
 # --- Dashboard ---
 def get_spending_by_category(user_id: int, date_from: str = None, date_to: str = None) -> List[Dict[str, Any]]:
@@ -372,18 +217,13 @@ def get_spending_by_category(user_id: int, date_from: str = None, date_to: str =
     if date_from: q += " AND date(t.date) >= date(?)"; params.append(date_from)
     if date_to: q += " AND date(t.date) <= date(?)"; params.append(date_to)
     q += " GROUP BY c.name HAVING total > 0 ORDER BY total DESC"
-    
     with get_conn() as conn:
         cur = conn.cursor()
         cur.execute(q, params)
         return [{"category": r['name'], "total": r['total']} for r in cur.fetchall()]
 
 def get_daily_summary(user_id: int, days: int = 30) -> List[Dict[str, Any]]:
-    q = f"""SELECT date(t.date) as day,
-                   SUM(CASE WHEN t.type = 'income' THEN t.amount ELSE 0 END) as income,
-                   SUM(CASE WHEN t.type = 'expense' THEN t.amount ELSE 0 END) as expense
-            FROM transactions t WHERE date(t.date) >= date('now', '-{days} days') AND t.user_id = ?
-            GROUP BY day ORDER BY day ASC"""
+    q = f"SELECT date(t.date) as day, SUM(CASE WHEN t.type = 'income' THEN t.amount ELSE 0 END) as income, SUM(CASE WHEN t.type = 'expense' THEN t.amount ELSE 0 END) as expense FROM transactions t WHERE date(t.date) >= date('now', '-{days} days') AND t.user_id = ? GROUP BY day ORDER BY day ASC"
     with get_conn() as conn:
         cur = conn.cursor()
         cur.execute(q, (user_id,))
@@ -422,10 +262,7 @@ def delete_budget(user_id: int, category_id: int, month: str) -> int:
         return cur.rowcount
 
 def get_budgets_with_spending(user_id: int, month: str) -> List[Dict[str, Any]]:
-    q = """SELECT c.id, c.name, b.amount as budgeted, COALESCE(SUM(t.amount), 0) as spent
-           FROM categories c LEFT JOIN budgets b ON c.id = b.category_id AND b.month = ? AND b.user_id = ?
-           LEFT JOIN transactions t ON c.id = t.category_id AND t.type = 'expense' AND strftime('%Y-%m', t.date) = ? AND t.user_id = ?
-           WHERE c.user_id = ? GROUP BY c.id, c.name, b.amount ORDER BY c.name"""
+    q = """SELECT c.id, c.name, b.amount as budgeted, COALESCE(SUM(t.amount), 0) as spent FROM categories c LEFT JOIN budgets b ON c.id = b.category_id AND b.month = ? AND b.user_id = ? LEFT JOIN transactions t ON c.id = t.category_id AND t.type = 'expense' AND strftime('%Y-%m', t.date) = ? AND t.user_id = ? WHERE c.user_id = ? GROUP BY c.id, c.name, b.amount ORDER BY c.name"""
     with get_conn() as conn:
         cur = conn.cursor()
         cur.execute(q, (month, user_id, month, user_id, user_id))
@@ -472,6 +309,13 @@ def add_receivable(user_id: int, debtor_name: str, description: str, amount: flo
         cur.execute("INSERT INTO receivables (user_id, debtor_name, description, amount, date, status, recurring_id) VALUES (?, ?, ?, ?, ?, ?, ?)", (user_id, debtor_name, description, amount, date, status, recurring_id))
         conn.commit()
 
+def get_receivable_by_id(receivable_id: int, user_id: int) -> Optional[Dict[str, Any]]:
+    with get_conn() as conn:
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM receivables WHERE id = ? AND user_id = ?", (receivable_id, user_id))
+        row = cur.fetchone()
+        return dict(row) if row else None
+
 def get_receivables_by_user(user_id: int, status: str = None) -> List[sqlite3.Row]:
     q = "SELECT * FROM receivables WHERE user_id = ? AND recurring_id IS NULL"
     params = [user_id]
@@ -494,7 +338,19 @@ def update_receivable_status(receivable_id: int, user_id: int, new_status: str):
         cur.execute("UPDATE receivables SET status = ? WHERE id = ? AND user_id = ? AND recurring_id IS NULL", (new_status, receivable_id, user_id))
         conn.commit()
 
-# --- Dívidas Recorrentes ---
+def delete_receivable(receivable_id: int, user_id: int):
+    with get_conn() as conn:
+        cur = conn.cursor()
+        cur.execute("DELETE FROM receivables WHERE id = ? AND user_id = ?", (receivable_id, user_id))
+        conn.commit()
+
+def update_receivable(receivable_id: int, user_id: int, debtor_name: str, description: str, amount: float, date: str):
+    with get_conn() as conn:
+        cur = conn.cursor()
+        cur.execute("UPDATE receivables SET debtor_name = ?, description = ?, amount = ?, date = ? WHERE id = ? AND user_id = ?", (debtor_name, description, amount, date, receivable_id, user_id))
+        conn.commit()
+
+# --- Recebíveis Recorrentes ---
 def add_recurring_receivable(user_id: int, debtor_name: str, description: str, amount: float, day_of_month: int):
     with get_conn() as conn:
         cur = conn.cursor()
@@ -507,14 +363,37 @@ def get_recurring_receivables_by_user(user_id: int) -> List[Dict[str, Any]]:
         cur.execute("SELECT * FROM recurring_receivables WHERE user_id = ? ORDER BY day_of_month", (user_id,))
         return [dict(r) for r in cur.fetchall()]
 
+def get_recurring_receivable_by_id(rule_id: int, user_id: int) -> Optional[Dict[str, Any]]:
+    with get_conn() as conn:
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM recurring_receivables WHERE id = ? AND user_id = ?", (rule_id, user_id))
+        row = cur.fetchone()
+        return dict(row) if row else None
+
+def delete_recurring_receivable(rule_id: int, user_id: int):
+    with get_conn() as conn:
+        cur = conn.cursor()
+        cur.execute("DELETE FROM recurring_receivables WHERE id = ? AND user_id = ?", (rule_id, user_id))
+        conn.commit()
+
+def update_recurring_receivable(rule_id: int, user_id: int, debtor_name: str, description: str, amount: float, day_of_month: int):
+    with get_conn() as conn:
+        cur = conn.cursor()
+        cur.execute("UPDATE recurring_receivables SET debtor_name = ?, description = ?, amount = ?, day_of_month = ? WHERE id = ? AND user_id = ?", (debtor_name, description, amount, day_of_month, rule_id, user_id))
+        conn.commit()
+
+def get_paid_recurring_ids_for_month(user_id: int, month_str: str) -> set:
+    with get_conn() as conn:
+        cur = conn.cursor()
+        cur.execute("SELECT recurring_id FROM receivables WHERE user_id = ? AND recurring_id IS NOT NULL AND status = 'paid' AND strftime('%Y-%m', date) = ?", (user_id, month_str))
+        return {r[0] for r in cur.fetchall()}
+
+# --- Settle Month ---
 def settle_transactions_for_month(user_id: int, month_str: str):
     with get_conn() as conn:
         cur = conn.cursor()
-        # 1. Marcar pendentes
         cur.execute("UPDATE transactions SET status = 'paid' WHERE user_id = ? AND status = 'pendente' AND strftime('%Y-%m', date) = ?", (user_id, month_str))
-        # 2. Gerar recorrentes
-        cur.execute("SELECT * FROM recurring_expenses WHERE user_id = ?", (user_id,))
-        rules = cur.fetchall()
+        rules = fetch_recurring_expenses(user_id)
         cur.execute("SELECT recurring_id FROM transactions WHERE user_id = ? AND recurring_id IS NOT NULL AND strftime('%Y-%m', date) = ?", (user_id, month_str))
         paid_ids = {r[0] for r in cur.fetchall()}
         for r in rules:

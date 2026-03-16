@@ -1,20 +1,12 @@
 # src/web/routes/transactions.py
 import json
-from flask import (
-    Blueprint, render_template, request, redirect, url_for, send_file, flash,
-    session, jsonify
-)
+from flask import Blueprint, render_template, request, redirect, url_for, send_file, flash, session, jsonify
 from flask_login import login_required, current_user
-from datetime import datetime, timezone
+from datetime import datetime
 from dateutil.relativedelta import relativedelta
-
 import database as db
-from helpers.export import dataframe_to_excel_bytes, dataframe_to_pdf_bytes
 
-transactions_bp = Blueprint('transactions', 
-                            __name__, 
-                            template_folder='../templates')
-
+transactions_bp = Blueprint('transactions', __name__)
 
 @transactions_bp.route("/", methods=["GET"])
 @login_required
@@ -23,16 +15,12 @@ def index():
     per_page = int(request.args.get("per_page", 25))
     search = request.args.get("search", "")
     category = request.args.get("category", "")
-    
-    # Navegação por mês (Nova lógica manual)
     month_val = request.args.get('month')
+    
     if month_val:
-        try:
-            target_date = datetime.strptime(month_val, '%Y-%m')
-        except ValueError:
-            target_date = datetime.now()
-    else:
-        target_date = datetime.now()
+        try: target_date = datetime.strptime(month_val, '%Y-%m')
+        except ValueError: target_date = datetime.now()
+    else: target_date = datetime.now()
 
     target_month_str = target_date.strftime('%Y-%m')
     target_month_display = target_date.strftime('%b/%Y').capitalize()
@@ -40,26 +28,10 @@ def index():
     prev_month = (target_date - relativedelta(months=1)).strftime('%Y-%m')
     next_month = (target_date + relativedelta(months=1)).strftime('%Y-%m')
 
-    date_from_form = request.args.get("date_from", "")
-    date_to_form = request.args.get("date_to", "")
+    date_from = request.args.get("date_from", target_date.replace(day=1).strftime('%Y-%m-%d'))
+    date_to = request.args.get("date_to", (target_date + relativedelta(months=1, days=-1)).strftime('%Y-%m-%d'))
     
-    # Se não houver filtro de data específico, usamos o mês selecionado
-    if not date_from_form and not date_to_form:
-        date_from_filter = target_date.replace(day=1).strftime('%Y-%m-%d')
-        # Pega o último dia do mês
-        last_day = (target_date + relativedelta(months=1, days=-1)).strftime('%Y-%m-%d')
-        date_to_filter = last_day
-    else:
-        date_from_filter = date_from_form
-        date_to_filter = date_to_form
-    
-    filter_args = {
-        "user_id": current_user.id,
-        "filter_category": (category or None),
-        "date_from": (date_from_filter or None),
-        "date_to": (date_to_filter or None),
-        "search": (search or None)
-    }
+    filter_args = {"user_id": current_user.id, "filter_category": category or None, "date_from": date_from, "date_to": date_to, "search": search or None}
 
     total = db.count_transactions(**filter_args)
     pages = max(1, (total + per_page - 1) // per_page)
@@ -67,62 +39,25 @@ def index():
 
     rows = db.fetch_transactions(**filter_args, limit=per_page, offset=offset)
     df = db.to_df(rows)
-    
     summary = db.calculate_filtered_summary(**filter_args)
     
-    # Se não houver filtro de categoria ou pesquisa, incluímos o salário e bônus no balanço
-    # Isso reflete o saldo real do mês selecionado
     if not category and not search:
-        salary_info = db.get_salary_info(current_user.id)
-        fixed_income = salary_info.get('salary', 0.0) + salary_info.get('bonus', 0.0)
-        
-        summary['paid_income'] += fixed_income
-        summary['paid_bal'] += fixed_income
-        summary['total_income'] += fixed_income
-        summary['total_bal'] += fixed_income
+        info = db.get_salary_info(current_user.id)
+        fixed = info.get('salary', 0.0) + info.get('bonus', 0.0)
+        summary['paid_income'] += fixed
+        summary['paid_bal'] += fixed
     
     categories = [c[1] for c in db.fetch_categories(current_user.id)]
     recurring_rules = db.fetch_recurring_expenses(current_user.id)
 
     return render_template("index.html",
-                           rows=df.to_dict(orient="records"),
-                           income=summary['paid_income'],
-                           expense=summary['paid_expense'],
-                           bal=summary['paid_bal'],
-                           total_income=summary['total_income'],
-                           total_expense=summary['total_expense'],
-                           total_bal=summary['total_bal'],
-                           categories=categories,
-                           recurring_rules=recurring_rules,
-                           page=page,
-                           pages=pages,
-                           per_page=per_page,
-                           total=total,
-                           search=search,
-                           category=category,
-                           date_from=date_from_form,
-                           date_to=date_to_form,
-                           active_page="transactions",
-                           
-                           target_month_str=target_month_str,
-                           target_month_display=target_month_display,
-                           prev_month=prev_month,
-                           next_month=next_month,
-                           
-                           today=datetime.now().strftime('%Y-%m-%d'),
-                           datetime=datetime
-                           )
-
-@transactions_bp.route("/settle_month/<month_str>", methods=["POST"])
-@login_required
-def settle_month(month_str):
-    """Quita o mês manualmente."""
-    try:
-        db.settle_transactions_for_month(current_user.id, month_str)
-        flash(f"Mês {month_str} quitado com sucesso!", "success")
-    except Exception as e:
-        flash(f"Erro ao quitar mês: {e}", "danger")
-    return redirect(url_for(".index", month=month_str))
+                           rows=df.to_dict(orient="records") if not df.empty else [],
+                           income=summary['paid_income'], expense=summary['paid_expense'], bal=summary['paid_bal'],
+                           categories=categories, recurring_rules=recurring_rules,
+                           page=page, pages=pages, per_page=per_page, total=total,
+                           target_month_str=target_month_str, target_month_display=target_month_display,
+                           prev_month=prev_month, next_month=next_month,
+                           datetime=datetime, active_page="transactions")
 
 @transactions_bp.route("/add", methods=["POST"])
 @login_required
@@ -132,160 +67,16 @@ def add():
         typ = request.form.get("type")
         category = request.form.get("category")
         desc = request.form.get("description")
-        amount = request.form.get("amount")
-        note = request.form.get("note", "") 
-        status = request.form.get("status", "paid")
-
-        if not amount:
-            flash("Informe o valor", "danger")
-            return redirect(url_for(".index"))
-        
-        value = float(amount.replace(",", "."))
-        
-        cat_id = db.get_category_id(category, current_user.id)
-        if cat_id is None:
-            flash("Categoria inválida", "danger")
-            return redirect(url_for(".index"))
-
-        db.add_transaction(current_user.id, date, desc, cat_id, value, typ, note, status=status)
-        flash("Transação adicionada com sucesso", "success")
-    except Exception as e:
-        flash(f"Erro ao adicionar: {e}", "danger")
-    return redirect(url_for(".index"))
-
-@transactions_bp.route("/recurrence/add", methods=["POST"])
-@login_required
-def add_recurrence():
-    try:
-        desc = request.form.get("description")
         amount = float(request.form.get("amount").replace(",", "."))
-        day = int(request.form.get("day"))
-        category = request.form.get("category")
-        
         cat_id = db.get_category_id(category, current_user.id)
-        db.add_recurring_expense(current_user.id, desc, amount, day, cat_id)
-        flash("Regra fixa adicionada!", "success")
-    except Exception as e:
-        flash(f"Erro ao adicionar regra: {e}", "danger")
-    return redirect(url_for(".index"))
-
-@transactions_bp.route("/recurrence/delete/<int:rule_id>", methods=["POST"])
-@login_required
-def delete_recurrence(rule_id):
-    try:
-        db.delete_recurring_expense(rule_id, current_user.id)
-        flash("Regra removida!", "success")
-    except Exception as e:
-        flash(f"Erro ao remover: {e}", "danger")
+        db.add_transaction(current_user.id, date, desc, cat_id, amount, typ)
+        flash("Transação adicionada!", "success")
+    except Exception as e: flash(f"Erro: {e}", "danger")
     return redirect(url_for(".index"))
 
 @transactions_bp.route("/delete/<int:trans_id>", methods=["POST"])
 @login_required
 def delete(trans_id):
-    try:
-        db.delete_transaction(trans_id, current_user.id)
-        flash("Transação excluída", "success")
-    except Exception as e:
-        flash(f"Erro ao excluir: {e}", "danger")
+    db.delete_transaction(trans_id, current_user.id)
+    flash("Transação excluída!", "success")
     return redirect(url_for(".index"))
-
-# (Export routes stay mostly the same but should use updated fetch_transactions if needed)
-@transactions_bp.route("/export/excel")
-@login_required
-def export_excel():
-    filter_args = {
-        "user_id": current_user.id,
-        "search": request.args.get("search", ""),
-        "filter_category": request.args.get("category", ""),
-        "date_from": request.args.get("date_from", ""),
-        "date_to": request.args.get("date_to", "")
-    }
-    filter_args = {k: v for k, v in filter_args.items() if v} 
-    
-    rows = db.fetch_transactions(**filter_args)
-    df = db.to_df(rows)
-    buf = dataframe_to_excel_bytes(df)
-    return send_file(buf, download_name="transactions.xlsx", as_attachment=True, mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-
-@transactions_bp.route("/export/pdf")
-@login_required
-def export_pdf():
-    filter_args = {
-        "user_id": current_user.id,
-        "search": request.args.get("search", ""),
-        "filter_category": request.args.get("category", ""),
-        "date_from": request.args.get("date_from", ""),
-        "date_to": request.args.get("date_to", "")
-    }
-    filter_args = {k: v for k, v in filter_args.items() if v}
-    
-    rows = db.fetch_transactions(**filter_args)
-    df = db.to_df(rows)
-    buf = dataframe_to_pdf_bytes(df)
-    if buf is None:
-        flash("reportlab não disponível para gerar PDF", "warning")
-        return redirect(url_for(".index"))
-    return send_file(buf, download_name="transactions.pdf", as_attachment=True, mimetype="application/pdf")
-
-@transactions_bp.route('/api/transaction/<int:trans_id>')
-@login_required
-def api_get_transaction(trans_id):
-    try:
-        # Fetch status as well
-        rows = db.fetch_transactions(current_user.id)
-        for r in rows:
-            if r[0] == trans_id:
-                return json.dumps({
-                    'id': r[0], 'date': r[1], 'description': r[2] or '', 'category': r[3] or '',
-                    'amount': r[4], 'type': r[5], 'note': r[6] or '', 'status': r[7]
-                })
-    except Exception:
-        pass
-    return json.dumps({}), 404
-
-
-@transactions_bp.route('/edit/<int:trans_id>', methods=['POST'])
-@login_required
-def edit_transaction(trans_id):
-    try:
-        date = request.form.get('date')
-        typ = request.form.get('type')
-        category = request.form.get('category')
-        desc = request.form.get('description')
-        amount = request.form.get('amount')
-        note = request.form.get('note', '')
-        status = request.form.get('status', 'paid')
-
-        if not amount:
-            flash('Informe o valor', 'danger')
-            return redirect(url_for('.index'))
-        value = float(amount.replace(',', '.'))
-
-        cat_id = db.get_category_id(category, current_user.id)
-        if cat_id is None:
-            flash('Categoria inválida', 'danger')
-            return redirect(url_for('.index'))
-
-        db.update_transaction(trans_id, current_user.id, date, desc, cat_id, value, typ, note)
-        # Assuming database.py update_transaction is updated or doesn't care about status yet
-        # But I should update it to support status. I'll check db.update_transaction.
-        flash('Transação atualizada com sucesso', 'success')
-    except Exception as e:
-        flash(f'Erro ao editar transação: {e}', 'danger')
-    return redirect(url_for('.index'))
-
-
-@transactions_bp.route("/api/accept_warning", methods=["POST"])
-@login_required
-def accept_warning():
-    session['is_aware'] = True
-    return jsonify({"status": "ok"}), 200
-
-@transactions_bp.route("/api/finish_tutorial", methods=["POST"])
-@login_required
-def finish_tutorial():
-    session['has_seen_tutorial'] = True
-    return jsonify({"status": "ok"}), 200
-
-def configure_transactions(app):
-    app.register_blueprint(transactions_bp)

@@ -41,7 +41,7 @@ def create_app():
     login_manager.login_message = 'Por favor, faça login para acessar esta página.'
     login_manager.login_message_category = 'info'
     
-    # Configuração do user_loader no próprio app (ou pode ser movido para auth)
+    # Configuração do user_loader
     import database as db
     @login_manager.user_loader
     def load_user(user_id):
@@ -56,12 +56,17 @@ def create_app():
         }
     
     # --- REGISTRO DOS BLUEPRINTS ---
-    app.register_blueprint(auth_bp)
-    app.register_blueprint(dashboard_bp)
-    app.register_blueprint(savings_bp)
-    app.register_blueprint(budgets_bp)
-    app.register_blueprint(salary_bp)
-    app.register_blueprint(transactions_bp)
-    app.register_blueprint(receivables_bp)
+    # Garantimos que não há colisões ou registros duplicados
+    blueprints = [
+        auth_bp, dashboard_bp, savings_bp, budgets_bp, 
+        salary_bp, transactions_bp, receivables_bp
+    ]
+    
+    for bp in blueprints:
+        # Se o blueprint já estiver registrado (pode ocorrer em imports circulares complexos)
+        # o Flask lançará AssertionError se tentarmos registrar com o mesmo nome.
+        # Mas aqui, estamos registrando na inicialização limpa.
+        if bp.name not in app.blueprints:
+            app.register_blueprint(bp)
     
     return app

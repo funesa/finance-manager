@@ -1,12 +1,9 @@
 # routes/receivables.py
-from flask import (
-    Blueprint, render_template, request, redirect, url_for, flash, jsonify
-)
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_required, current_user
-from datetime import datetime  # <-- 'datetime' já está importado
+from datetime import datetime
 from dateutil.relativedelta import relativedelta
 import locale
-
 import database as db
 
 receivables_bp = Blueprint('receivables', __name__)
@@ -14,329 +11,119 @@ receivables_bp = Blueprint('receivables', __name__)
 @receivables_bp.route("/receivables")
 @login_required
 def index():
-    """Página principal de Contas a Receber."""
-    
     try:
         try:
             locale.setlocale(locale.LC_TIME, 'pt_BR.UTF-8')
         except locale.Error:
-            try:
-                locale.setlocale(locale.LC_TIME, 'Portuguese_Brazil.1252')
-            except locale.Error:
-                locale.setlocale(locale.LC_TIME, '')
+            locale.setlocale(locale.LC_TIME, '')
 
-        # Mantemos uma visualização simples por mês se desejar
         month_val = request.args.get('month')
         if month_val:
-            try:
-                target_date = datetime.strptime(month_val, '%Y-%m')
-            except ValueError:
-                target_date = datetime.now()
-        else:
-            target_date = datetime.now()
+            try: target_date = datetime.strptime(month_val, '%Y-%m')
+            except ValueError: target_date = datetime.now()
+        else: target_date = datetime.now()
 
         target_month_str = target_date.strftime('%Y-%m')
         target_month_display = target_date.strftime('%b/%Y').capitalize()
         
-        # Navegação de meses
-        prev_month_date = target_date - relativedelta(months=1)
-        next_month_date = target_date + relativedelta(months=1)
-        prev_month_str = prev_month_date.strftime('%Y-%m')
-        next_month_str = next_month_date.strftime('%Y-%m')
+        prev_month_str = (target_date - relativedelta(months=1)).strftime('%Y-%m')
+        next_month_str = (target_date + relativedelta(months=1)).strftime('%Y-%m')
+        next_month_display = (target_date + relativedelta(months=1)).strftime('%b/%Y').capitalize()
+
+        recurring_rules = db.get_recurring_receivables_by_user(current_user.id)
+        paid_in_target_month_ids = db.get_paid_recurring_ids_for_month(current_user.id, target_month_str)
+        pending_recurring_list = [rule for rule in recurring_rules if rule['id'] not in paid_in_target_month_ids]
         
-        # Para a projeção do próximo mês
-        next_month_val_str = next_month_date.strftime('%Y-%m')
-        next_month_display = next_month_date.strftime('%b/%Y').capitalize()
-
-        # Initialize variables with defaults
-        recurring_rules = []
-        paid_in_target_month_ids = set()
-        pending_manual = []
-        paid_history = []
-        total_pending_target_month = 0.0
-        total_pending_next_month = 0.0
-        total_pending_all_time = 0.0
-        debug_info = []
-
-        try:
-            recurring_rules = db.get_recurring_receivables_by_user(current_user.id)
-            paid_in_target_month_ids = db.get_paid_recurring_ids_for_month(current_user.id, target_month_str)
-            pending_recurring_list = [
-                rule for rule in recurring_rules if rule['id'] not in paid_in_target_month_ids
-            ]
-            
-            pending_manual = db.get_receivables_by_user(current_user.id, status='pending')
-            paid_history = db.get_paid_receivables_history(current_user.id)
-            
-            # Soma do mês selecionado (Inclui o que vence no mês + o que já está atrasado de meses anteriores)
-            total_pending_target_month = sum(float(rule.get('amount', 0)) for rule in pending_recurring_list)
-            
-            # Filtro de data limite para o mês alvo (ex: 2024-03-31)
-            for row in pending_manual:
-                try:
-                    val = float(row[3])
-                    row_date_str = row[4] # YYYY-MM-DD
-                    
-                    # Inclui se for do mês alvo ou ANTES dele
-                    if row_date_str <= target_month_str + "-31":
-                        total_pending_target_month += val
-                    
-                    # Projeção para o próximo mês (Apenas o que vence EXATAMENTE no próximo mês)
-                    if row_date_str[:7] == next_month_val_str:
-                        total_pending_next_month += val
-                except (IndexError, ValueError, TypeError):
-                    continue
-            
-            # Recorrentes para o próximo mês (assumimos que todos os recorrentes ativos estarão pendentes no próximo mês)
-            total_pending_next_month += sum(float(rule.get('amount', 0)) for rule in recurring_rules)
-
-            # Soma de todos os tempos (Tudo o que está pendente no sistema)
-            total_pending_all_time = sum(float(row[3]) for row in pending_manual if len(row) >= 4)
-            total_pending_all_time += sum(float(rule.get('amount', 0)) for rule in pending_recurring_list)
-            
-        except Exception as db_err:
-            flash(f"Erro ao carregar dados do banco: {db_err}", "warning")
-            debug_info.append(f"DB Error: {db_err}")
-            pending_recurring_list = []
+        pending_manual = db.get_receivables_by_user(current_user.id, status='pending')
+        paid_history = db.get_paid_receivables_history(current_user.id)
+        
+        total_pending_target_month = sum(float(rule.get('amount', 0)) for rule in pending_recurring_list)
+        for row in pending_manual:
+            try:
+                val = float(row['amount'])
+                if row['date'] <= target_month_str + "-31": total_pending_target_month += val
+            except: continue
+        
+        total_pending_all_time = sum(float(row['amount']) for row in pending_manual)
+        total_pending_all_time += sum(float(rule.get('amount', 0)) for rule in pending_recurring_list)
 
         return render_template('receivables.html', 
                                pending_manual_receivables=pending_manual,
                                pending_recurring=pending_recurring_list,
                                all_recurring_rules=recurring_rules,
                                paid_history=paid_history,
-                               
                                total_pending_this_month=total_pending_target_month,
-                               total_pending_next_month=total_pending_next_month,
                                total_pending_all_time=total_pending_all_time,
                                target_month_display=target_month_display,
                                target_month_str=target_month_str,
-                               next_month_display=next_month_display,
                                prev_month_str=prev_month_str,
                                next_month_str=next_month_str,
-                               
-                               today=datetime.now().strftime('%Y-%m-%d'),
-                               current_day=datetime.now().day,
-                               datetime=datetime,
-                               debug_items=debug_info
+                               datetime=datetime
                                )
     except Exception as e:
-        flash(f"Ocorreu um erro inesperado ao carregar a página: {e}", "danger")
-        return render_template('receivables.html', 
-                               pending_manual_receivables=[],
-                               pending_recurring=[],
-                               all_recurring_rules=[],
-                               paid_history=[],
-                               total_pending_this_month=0,
-                               total_pending_all_time=0,
-                               target_month_display="Erro",
-                               target_month_str=datetime.now().strftime('%Y-%m'),
-                               today=datetime.now().strftime('%Y-%m-%d'),
-                               current_day=datetime.now().day,
-                               datetime=datetime,
-                               debug_items=[str(e)]
-                               )
-
-# ... (restante do arquivo 'receivables.py' permanece o mesmo) ...
+        flash(f"Erro ao carregar recebíveis: {e}", "danger")
+        return redirect(url_for('dashboard.index'))
 
 @receivables_bp.route("/receivables/add_manual", methods=["POST"])
 @login_required
 def add_manual():
-    """Adiciona uma nova conta a receber (Avulsa ou Parcelada)."""
     try:
-        debtor_name = request.form.get('debtor_name')
-        description = request.form.get('description')
-        total_amount_str = request.form.get('amount')
-        start_date_str = request.form.get('date')
-        
-        try:
-            installments = int(request.form.get('installments', 1))
-            if installments <= 0:
-                installments = 1
-        except ValueError:
-            installments = 1
-        
-        if not debtor_name or not total_amount_str or not start_date_str:
-            flash("Nome, valor total e data da 1ª parcela são obrigatórios.", "danger")
-            return redirect(url_for('receivables.index'))
-        
-        total_amount = float(total_amount_str)
-        start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
-
-        if installments == 1:
-            db.add_receivable(current_user.id, debtor_name, description, total_amount, start_date_str)
-        else:
-            installment_amount = round(total_amount / installments, 2)
-            remainder = round(total_amount - (installment_amount * installments), 2)
-            
-            for i in range(installments):
-                current_installment = i + 1
-                current_date = start_date + relativedelta(months=i)
-                current_desc = f"{description} ({current_installment}/{installments})"
-                
-                current_amount = installment_amount
-                if i == 0:
-                    current_amount += remainder
-                    current_amount = round(current_amount, 2)
-                
-                db.add_receivable(
-                    user_id=current_user.id,
-                    debtor_name=debtor_name,
-                    description=current_desc,
-                    amount=current_amount,
-                    date=current_date.strftime('%Y-%m-%d')
-                )
-                
-        flash(f"{installments} parcela(s) de '{description}' adicionada(s) com sucesso!", "success")
-        
-    except Exception as e:
-        flash(f"Erro ao adicionar: {e}", "danger")
-        
+        debtor = request.form.get('debtor_name')
+        desc = request.form.get('description')
+        amount = float(request.form.get('amount'))
+        date = request.form.get('date')
+        db.add_receivable(current_user.id, debtor, desc, amount, date)
+        flash("Conta a receber adicionada!", "success")
+    except Exception as e: flash(f"Erro: {e}", "danger")
     return redirect(url_for('receivables.index'))
-
 
 @receivables_bp.route("/receivables/mark_manual_paid/<int:receivable_id>", methods=["POST"])
 @login_required
 def mark_manual_paid(receivable_id):
-    """Marca uma conta avulsa/parcelada como paga."""
     try:
         db.update_receivable_status(receivable_id, current_user.id, 'paid')
-        flash("Conta marcada como paga.", "success")
-    except Exception as e:
-        flash(f"Erro ao atualizar status: {e}", "danger")
-        
+        flash("Conta marcada como paga!", "success")
+    except Exception as e: flash(f"Erro: {e}", "danger")
     return redirect(url_for('receivables.index'))
 
 @receivables_bp.route("/receivables/delete_manual/<int:receivable_id>", methods=["POST"])
 @login_required
 def delete_manual(receivable_id):
-    """Apaga uma conta avulsa/parcelada (ou um item do histórico)."""
     try:
         db.delete_receivable(receivable_id, current_user.id)
-        flash("Registro apagado.", "success")
-    except Exception as e:
-        flash(f"Erro ao apagar: {e}", "danger")
-        
+        flash("Registro apagado!", "success")
+    except Exception as e: flash(f"Erro: {e}", "danger")
     return redirect(url_for('receivables.index'))
-
-@receivables_bp.route("/receivables/edit_manual/<int:receivable_id>", methods=["POST"])
-@login_required
-def edit_manual(receivable_id):
-    """Edita uma conta avulsa/parcelada."""
-    try:
-        debtor_name = request.form.get('edit_debtor_name')
-        description = request.form.get('edit_description')
-        amount = float(request.form.get('edit_amount'))
-        date = request.form.get('edit_date')
-        
-        if not debtor_name or not amount or not date:
-            flash("Nome, valor e data são obrigatórios.", "danger")
-            return redirect(url_for('receivables.index'))
-            
-        db.update_receivable(receivable_id, current_user.id, debtor_name, description, amount, date)
-        flash("Conta atualizada com sucesso!", "success")
-    except Exception as e:
-        flash(f"Erro ao editar: {e}", "danger")
-        
-    return redirect(url_for('receivables.index'))
-
-@receivables_bp.route("/api/receivable/<int:receivable_id>")
-@login_required
-def api_get_receivable(receivable_id):
-    """Retorna dados de uma conta avulsa/parcelada para o modal de edição."""
-    data = db.get_receivable_by_id(receivable_id, current_user.id)
-    if data:
-        return jsonify(data)
-    return jsonify({"error": "Não encontrado"}), 404
-
-
-# --- ROTAS PARA DÍVIDAS RECORRENTES ---
 
 @receivables_bp.route("/receivables/add_recurring", methods=["POST"])
 @login_required
 def add_recurring():
-    """Adiciona uma nova REGRA de cobrança recorrente."""
     try:
-        debtor_name = request.form.get('recurring_debtor_name')
-        description = request.form.get('recurring_description')
+        debtor = request.form.get('recurring_debtor_name')
+        desc = request.form.get('recurring_description')
         amount = float(request.form.get('recurring_amount'))
-        day_of_month = int(request.form.get('recurring_day'))
-        
-        if not debtor_name or not amount or not day_of_month:
-            flash("Nome, valor e dia são obrigatórios.", "danger")
-            return redirect(url_for('receivables.index'))
-        
-        db.add_recurring_receivable(current_user.id, debtor_name, description, amount, day_of_month)
-        flash("Cobrança recorrente criada com sucesso!", "success")
-    except Exception as e:
-        flash(f"Erro ao criar recorrente: {e}", "danger")
-        
+        day = int(request.form.get('recurring_day'))
+        db.add_recurring_receivable(current_user.id, debtor, desc, amount, day)
+        flash("Regra recorrente criada!", "success")
+    except Exception as e: flash(f"Erro: {e}", "danger")
     return redirect(url_for('receivables.index'))
 
 @receivables_bp.route("/receivables/pay_recurring/<int:recurring_id>", methods=["POST"])
 @login_required
 def pay_recurring(recurring_id):
-    """Marca uma conta recorrente como PAGA para o mês ATUAL."""
     try:
         rule = db.get_recurring_receivable_by_id(recurring_id, current_user.id)
-        if not rule:
-            flash("Regra recorrente não encontrada.", "danger")
-            return redirect(url_for('receivables.index'))
-        
-        # Cria um registro no histórico (tabela 'receivables')
-        db.add_receivable(
-            user_id=current_user.id,
-            debtor_name=rule['debtor_name'],
-            description=rule['description'],
-            amount=rule['amount'],
-            date=datetime.now().strftime('%Y-%m-%d'),
-            status='paid', # Já entra como PAGO
-            recurring_id=recurring_id # Vincula ao ID da regra
-        )
-        flash(f"Pagamento de {rule['debtor_name']} registrado!", "success")
-    except Exception as e:
-        flash(f"Erro ao registrar pagamento: {e}", "danger")
-        
+        if rule:
+            db.add_receivable(current_user.id, rule['debtor_name'], rule['description'], rule['amount'], datetime.now().strftime('%Y-%m-%d'), status='paid', recurring_id=recurring_id)
+            flash("Pagamento registrado!", "success")
+    except Exception as e: flash(f"Erro: {e}", "danger")
     return redirect(url_for('receivables.index'))
 
 @receivables_bp.route("/receivables/delete_recurring/<int:recurring_id>", methods=["POST"])
 @login_required
 def delete_recurring(recurring_id):
-    """Apaga uma REGRA de cobrança recorrente."""
     try:
         db.delete_recurring_receivable(recurring_id, current_user.id)
-        flash("Regra recorrente apagada.", "success")
-    except Exception as e:
-        flash(f"Erro ao apagar regra: {e}", "danger")
-        
+        flash("Regra removida!", "success")
+    except Exception as e: flash(f"Erro: {e}", "danger")
     return redirect(url_for('receivables.index'))
-
-@receivables_bp.route("/api/recurring_receivable/<int:recurring_id>")
-@login_required
-def api_get_recurring_receivable(recurring_id):
-    """Retorna dados de uma REGRA recorrente para o modal de edição."""
-    data = db.get_recurring_receivable_by_id(recurring_id, current_user.id)
-    if data:
-        return jsonify(data)
-    return jsonify({"error": "Não encontrado"}), 404
-
-@receivables_bp.route("/receivables/edit_recurring/<int:recurring_id>", methods=["POST"])
-@login_required
-def edit_recurring(recurring_id):
-    """Edita uma REGRA de cobrança recorrente."""
-    try:
-        debtor_name = request.form.get('edit_recurring_debtor_name')
-        description = request.form.get('edit_recurring_description')
-        amount = float(request.form.get('edit_recurring_amount'))
-        day_of_month = int(request.form.get('edit_recurring_day'))
-        
-        db.update_recurring_receivable(recurring_id, current_user.id, debtor_name, description, amount, day_of_month)
-        flash("Regra recorrente atualizada!", "success")
-    except Exception as e:
-        flash(f"Erro ao editar regra: {e}", "danger")
-        
-    return redirect(url_for('receivables.index'))
-
-
-# Função que o __init__.py irá chamar
-def configure_receivables(app):
-    app.register_blueprint(receivables_bp)
