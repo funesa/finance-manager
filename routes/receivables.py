@@ -38,12 +38,23 @@ def index():
         target_month_str = target_date.strftime('%Y-%m')
         target_month_display = target_date.strftime('%b/%Y').capitalize()
         
+        # Navegação de meses
+        prev_month_date = target_date - relativedelta(months=1)
+        next_month_date = target_date + relativedelta(months=1)
+        prev_month_str = prev_month_date.strftime('%Y-%m')
+        next_month_str = next_month_date.strftime('%Y-%m')
+        
+        # Para a projeção do próximo mês
+        next_month_val_str = next_month_date.strftime('%Y-%m')
+        next_month_display = next_month_date.strftime('%b/%Y').capitalize()
+
         # Initialize variables with defaults
         recurring_rules = []
         paid_in_target_month_ids = set()
         pending_manual = []
         paid_history = []
         total_pending_target_month = 0.0
+        total_pending_next_month = 0.0
         total_pending_all_time = 0.0
         debug_info = []
 
@@ -61,9 +72,7 @@ def index():
             total_pending_target_month = sum(float(rule.get('amount', 0)) for rule in pending_recurring_list)
             
             # Filtro de data limite para o mês alvo (ex: 2024-03-31)
-            # Se o usuário está vendo o mês atual ou futuro, mostramos o que vence até o fim desse mês
             for row in pending_manual:
-                # row structure: (id, name, desc, amount, date, status)
                 try:
                     val = float(row[3])
                     row_date_str = row[4] # YYYY-MM-DD
@@ -71,8 +80,15 @@ def index():
                     # Inclui se for do mês alvo ou ANTES dele
                     if row_date_str <= target_month_str + "-31":
                         total_pending_target_month += val
+                    
+                    # Projeção para o próximo mês (Apenas o que vence EXATAMENTE no próximo mês)
+                    if row_date_str[:7] == next_month_val_str:
+                        total_pending_next_month += val
                 except (IndexError, ValueError, TypeError):
                     continue
+            
+            # Recorrentes para o próximo mês (assumimos que todos os recorrentes ativos estarão pendentes no próximo mês)
+            total_pending_next_month += sum(float(rule.get('amount', 0)) for rule in recurring_rules)
 
             # Soma de todos os tempos (Tudo o que está pendente no sistema)
             total_pending_all_time = sum(float(row[3]) for row in pending_manual if len(row) >= 4)
@@ -90,9 +106,13 @@ def index():
                                paid_history=paid_history,
                                
                                total_pending_this_month=total_pending_target_month,
+                               total_pending_next_month=total_pending_next_month,
                                total_pending_all_time=total_pending_all_time,
                                target_month_display=target_month_display,
                                target_month_str=target_month_str,
+                               next_month_display=next_month_display,
+                               prev_month_str=prev_month_str,
+                               next_month_str=next_month_str,
                                
                                today=datetime.now().strftime('%Y-%m-%d'),
                                current_day=datetime.now().day,
