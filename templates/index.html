@@ -55,20 +55,20 @@
 <div class="card shadow-sm">
   <div class="card-body">
 
-    <div class="d-flex flex-column flex-md-row justify-content-md-between align-items-md-center mb-4 gap-4">
+    <div class="d-flex flex-column flex-md-row justify-content-md-between align-items-md-center mb-4 gap-3">
       <h4 class="mb-0 fw-bold" style="font-family: 'Outfit';">Lançamentos</h4>
-      <div class="d-flex gap-2">
-        <button type="button" class="btn btn-primary d-none d-md-inline-block rounded-pill" data-bs-toggle="modal"
+      <div class="d-flex flex-wrap gap-2">
+        <button type="button" class="btn btn-primary d-none d-md-inline-block rounded-pill fw-semibold" data-bs-toggle="modal"
           data-bs-target="#addModal">
           <i class="bi bi-plus-circle me-1"></i> Adicionar
         </button>
 
-        <button type="button" class="btn btn-outline-primary rounded-pill" data-bs-toggle="modal"
+        <button type="button" class="btn btn-outline-primary rounded-pill fw-semibold px-3" data-bs-toggle="modal"
           data-bs-target="#recurringModal">
-          <i class="bi bi-arrow-repeat me-1"></i> Contas Fixas
+          <i class="bi bi-arrow-repeat me-1"></i> <span class="d-none d-sm-inline">Contas Fixas</span><span class="d-inline d-sm-none">Fixas</span>
         </button>
 
-        <button class="btn btn-outline-secondary rounded-pill" type="button" data-bs-toggle="collapse"
+        <button class="btn btn-outline-secondary rounded-pill fw-semibold px-3" type="button" data-bs-toggle="collapse"
           data-bs-target="#filterCollapse" aria-expanded="false" aria-controls="filterCollapse">
           <i class="bi bi-filter me-1"></i> Filtros
         </button>
