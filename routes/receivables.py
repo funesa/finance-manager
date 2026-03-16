@@ -58,6 +58,8 @@ def index():
                                target_month_str=target_month_str,
                                prev_month_str=prev_month_str,
                                next_month_str=next_month_str,
+                               next_month_display=next_month_display,
+                               today=datetime.now().strftime('%Y-%m-%d'),
                                datetime=datetime
                                )
     except Exception as e:
@@ -70,7 +72,7 @@ def add_manual():
     try:
         debtor = request.form.get('debtor_name')
         desc = request.form.get('description')
-        amount = float(request.form.get('amount'))
+        amount = float(request.form.get('amount').replace(",", "."))
         date = request.form.get('date')
         db.add_receivable(current_user.id, debtor, desc, amount, date)
         flash("Conta a receber adicionada!", "success")
@@ -101,7 +103,7 @@ def add_recurring():
     try:
         debtor = request.form.get('recurring_debtor_name')
         desc = request.form.get('recurring_description')
-        amount = float(request.form.get('recurring_amount'))
+        amount = float(request.form.get('recurring_amount').replace(",", "."))
         day = int(request.form.get('recurring_day'))
         db.add_recurring_receivable(current_user.id, debtor, desc, amount, day)
         flash("Regra recorrente criada!", "success")
@@ -127,3 +129,15 @@ def delete_recurring(recurring_id):
         flash("Regra removida!", "success")
     except Exception as e: flash(f"Erro: {e}", "danger")
     return redirect(url_for('receivables.index'))
+
+@receivables_bp.route("/api/receivable/<int:receivable_id>")
+@login_required
+def api_get_receivable(receivable_id):
+    r = db.get_receivable_by_id(receivable_id, current_user.id)
+    return jsonify(r) if r else ({'error': 'Not found'}, 404)
+
+@receivables_bp.route("/api/recurring_receivable/<int:rule_id>")
+@login_required
+def api_get_recurring_receivable(rule_id):
+    r = db.get_recurring_receivable_by_id(rule_id, current_user.id)
+    return jsonify(r) if r else ({'error': 'Not found'}, 404)

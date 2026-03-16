@@ -149,26 +149,26 @@
           {% endfor %}
 
           <!-- Manuais / Parceladas -->
-          {% for id, name, desc, amount, date, status in pending_manual_receivables %}
+          {% for r in pending_manual_receivables %}
           <div class="list-group-item bg-transparent border rounded-4 p-3 d-flex justify-content-between align-items-center shadow-sm">
             <div class="d-flex align-items-center gap-3">
               <div class="rounded-circle bg-primary bg-opacity-10 p-3 text-primary d-none d-sm-block">
                 <i class="bi bi-person-fill fs-4"></i>
               </div>
               <div>
-                <h6 class="mb-0 fw-bold">{{ name }}</h6>
-                <small class="text-muted">{{ desc or 'Dívida Avulsa' }} • {{ date.split('-') | reverse | join('/') }}</small>
+                <h6 class="mb-0 fw-bold">{{ r.debtor_name }}</h6>
+                <small class="text-muted">{{ r.description or 'Dívida Avulsa' }} • {{ r.date.split('-') | reverse | join('/') }}</small>
                 <div class="mt-1 d-sm-none">
-                  <span class="text-danger fw-bold currency-value">R$ {{ '{:.2f}'.format(amount) }}</span>
+                  <span class="text-danger fw-bold currency-value">R$ {{ '{:.2f}'.format(r.amount) }}</span>
                 </div>
               </div>
             </div>
             <div class="text-end d-flex align-items-center gap-2 gap-md-3">
               <div class="d-none d-sm-block text-end me-2">
-                <span class="d-block text-danger fw-bold fs-5 currency-value">R$ {{ '{:.2f}'.format(amount) }}</span>
+                <span class="d-block text-danger fw-bold fs-5 currency-value">R$ {{ '{:.2f}'.format(r.amount) }}</span>
               </div>
               <div class="d-flex gap-2">
-                <form action="{{ url_for('receivables.mark_manual_paid', receivable_id=id) }}" method="POST">
+                <form action="{{ url_for('receivables.mark_manual_paid', receivable_id=r.id) }}" method="POST">
                   <button type="submit" class="btn btn-success rounded-pill px-3 py-2 btn-sm">
                     <i class="bi bi-check-lg me-1"></i> <span class="d-none d-md-inline">Recebido</span>
                   </button>
@@ -178,9 +178,9 @@
                     <i class="bi bi-three-dots-vertical"></i>
                   </button>
                   <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 bg-darker">
-                    <li><a class="dropdown-item py-2" href="#" data-bs-toggle="modal" data-bs-target="#editReceivableModal" onclick="loadReceivableData('{{ id }}')">
+                    <li><a class="dropdown-item py-2" href="#" data-bs-toggle="modal" data-bs-target="#editReceivableModal" onclick="loadReceivableData('{{ r.id }}')">
                       <i class="bi bi-pencil me-2"></i>Editar</a></li>
-                    <li><form action="{{ url_for('receivables.delete_manual', receivable_id=id) }}" method="POST" class="d-inline">
+                    <li><form action="{{ url_for('receivables.delete_manual', receivable_id=r.id) }}" method="POST" class="d-inline">
                       <button type="submit" class="dropdown-item text-danger py-2" onclick="return confirm('Apagar dívida?');">
                         <i class="bi bi-trash me-2"></i>Excluir</button>
                     </form></li>
@@ -212,15 +212,15 @@
         <div class="collapse mt-4" id="paidHistoryCollapse">
           {% if paid_history %}
           <div class="list-group list-group-flush gap-2">
-            {% for id, name, desc, amount, date, status in paid_history %}
+            {% for r in paid_history %}
             <div class="list-group-item bg-transparent border-0 border-bottom border-secondary border-opacity-10 py-3 d-flex justify-content-between align-items-center px-0">
               <div class="opacity-75">
-                <h6 class="mb-0 fw-medium">{{ name }}</h6>
-                <small class="text-muted">{{ desc or 'Dívida' }} • {{ date.split('-') | reverse | join('/') }}</small>
+                <h6 class="mb-0 fw-medium">{{ r.debtor_name }}</h6>
+                <small class="text-muted">{{ r.description or 'Dívida' }} • {{ r.date.split('-') | reverse | join('/') }}</small>
               </div>
               <div class="text-end">
-                <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-2 currency-value">R$ {{ '{:.2f}'.format(amount) }}</span>
-                <form action="{{ url_for('receivables.delete_manual', receivable_id=id) }}" method="POST" class="d-inline ms-2">
+                <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-2 currency-value">R$ {{ '{:.2f}'.format(r.amount) }}</span>
+                <form action="{{ url_for('receivables.delete_manual', receivable_id=r.id) }}" method="POST" class="d-inline ms-2">
                   <button type="submit" class="btn btn-link btn-sm text-danger opacity-50 p-0" onclick="return confirm('Apagar histórico?');">
                     <i class="bi bi-x-circle"></i>
                   </button>

@@ -159,6 +159,13 @@ def delete_transaction(trans_id: int, user_id: int):
         cur.execute("DELETE FROM transactions WHERE id = ? AND user_id = ?", (trans_id, user_id))
         conn.commit()
 
+def get_transaction_by_id(trans_id: int, user_id: int) -> Optional[Dict[str, Any]]:
+    with get_conn() as conn:
+        cur = conn.cursor()
+        cur.execute("SELECT t.*, c.name as category FROM transactions t LEFT JOIN categories c ON t.category_id = c.id WHERE t.id = ? AND t.user_id = ?", (trans_id, user_id))
+        row = cur.fetchone()
+        return dict(row) if row else None
+
 def update_transaction(trans_id: int, user_id: int, date: str, desc: str, category_id: int, amount: float, typ: str, note: str = "", status: str = "paid"):
     with get_conn() as conn:
         cur = conn.cursor()
