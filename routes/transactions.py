@@ -41,20 +41,27 @@ def index():
     df = db.to_df(rows)
     summary = db.calculate_filtered_summary(**filter_args)
     
-    # Adiciona fixas ao resumo se não houver filtro
+    # Adiciona fixas ao resumo se não houver filtro de categoria/pesquisa
+    paid_income = summary['paid_income']
+    paid_bal = summary['paid_bal']
+    total_income = summary['total_income']
+    total_bal = summary['total_bal']
+
     if not category and not search:
         info = db.get_salary_info(current_user.id)
         fixed = info.get('salary', 0.0) + info.get('bonus', 0.0)
-        # Em transações.index, income/bal são usados para o topo
-        # Mas total_income/total_bal (previsto) vêm de summary['total_income'] etc.
+        paid_income += fixed
+        paid_bal += fixed
+        total_income += fixed
+        total_bal += fixed
     
     categories = [c[1] for c in db.fetch_categories(current_user.id)]
     recurring_rules = db.fetch_recurring_expenses(current_user.id)
 
     return render_template("index.html",
                            rows=df.to_dict(orient="records") if not df.empty else [],
-                           income=summary['paid_income'], expense=summary['paid_expense'], bal=summary['paid_bal'],
-                           total_income=summary['total_income'], total_expense=summary['total_expense'], total_bal=summary['total_bal'],
+                           income=paid_income, expense=summary['paid_expense'], bal=paid_bal,
+                           total_income=total_income, total_expense=summary['total_expense'], total_bal=total_bal,
                            categories=categories, recurring_rules=recurring_rules,
                            page=page, pages=pages, per_page=per_page, total=total,
                            target_month_str=target_month_str, target_month_display=target_month_display,
