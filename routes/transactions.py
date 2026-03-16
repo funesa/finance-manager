@@ -1,7 +1,7 @@
 # routes/transactions.py
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_required, current_user
-from datetime import datetime
+from datetime import datetime, timedelta
 import database as db
 import utils
 
@@ -20,7 +20,7 @@ def index():
     search = request.args.get("search", "")
     category = request.args.get("category", "")
     date_from = request.args.get("date_from", m['target_date'].replace(day=1).strftime('%Y-%m-%d'))
-    date_to = request.args.get("date_to", (m['target_date'].replace(day=28) + datetime.timedelta(days=4)).replace(day=1).replace(day=1).strftime('%Y-%m-%d')) # Simplified later
+    date_to = request.args.get("date_to", (m['target_date'].replace(day=28) + timedelta(days=4)).replace(day=1).replace(day=1).strftime('%Y-%m-%d')) # Simplified later
     
     # Actual proper end of month
     import calendar
