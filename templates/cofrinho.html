@@ -9,74 +9,104 @@
   </div>
 </div>
 
-<div class="row g-3">
-  <div class="col-md-6">
-    <div class="dashboard-card p-3">
-      <h6 class="card-subtitle mb-3">Adicionar Cofrinho</h6>
+<div class="row g-4 mb-4">
+  {# Coluna de Adição #}
+  <div class="col-lg-4">
+    <div class="dashboard-card p-4 h-100">
+      <h5 class="fw-bold mb-4" style="font-family: 'Outfit';">
+        <i class="bi bi-plus-circle-dotted me-2 text-accent" style="color:var(--accent-color-light)"></i> Novo Cofrinho
+      </h5>
       <form method="post" action="{{ url_for('savings.add') }}">
-        <div class="mb-2">
-          <label class="form-label">Nome</label>
-          <input name="name" class="form-control" required>
+        <div class="mb-3">
+          <label class="form-label small text-secondary">Identificação (ex: Reserva 2024)</label>
+          <input name="name" class="form-control" placeholder="Meta ou Nome" required>
         </div>
-        <div class="mb-2">
-          <label class="form-label">Banco</label>
-          <input name="bank" class="form-control">
-        </div>
-        <div class="mb-2">
-          <label class="form-label">Código do Banco</label>
-          <input name="bank_code" class="form-control">
-        </div>
-        <div class="mb-2">
-          <label class="form-label">Saldo (R$)</label>
-          <input name="balance" class="form-control" value="0">
-        </div>
-        <div class="mb-2">
-          <label class="form-label">Taxa CDI anual (%) (opcional)</label>
-          <input name="cdi_rate" class="form-control" placeholder="Ex: 12.5">
-        </div>
-        <div class="d-flex gap-2">
-          <button class="btn btn-primary btn-sm" type="submit">Adicionar</button>
-          <a href="{{ url_for('savings.index') }}" class="btn btn-secondary btn-sm">Cancelar</a>
+        <div class="row g-2 mb-3">
+          <div class="col-8">
+            <label class="form-label small text-secondary">Instituição / Banco</label>
+            <input name="bank" class="form-control" placeholder="Ex: Nubank, Itaú">
           </div>
+          <div class="col-4">
+            <label class="form-label small text-secondary">Cód.</label>
+            <input name="bank_code" class="form-control" placeholder="000">
+          </div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label small text-secondary">Saldo Inicial (R$)</label>
+          <div class="input-group">
+            <span class="input-group-text bg-transparent border-end-0 text-muted">R$</span>
+            <input name="balance" class="form-control border-start-0 ps-0" value="0">
+          </div>
+        </div>
+        <div class="mb-4">
+          <label class="form-label small text-secondary">Rendimento CDI anual (%)</label>
+          <input name="cdi_rate" class="form-control" placeholder="Ex: 10.5">
+        </div>
+        <div class="d-grid gap-2">
+          <button class="btn btn-primary fw-bold" type="submit">Criar Cofrinho</button>
+          <a href="{{ url_for('savings.index') }}" class="btn btn-outline-secondary btn-sm">Limpar</a>
+        </div>
       </form>
     </div>
   </div>
 
-  <div class="col-md-6">
-    <div class="dashboard-card p-3">
-      <h6 class="card-subtitle mb-3">Resumo</h6>
+  {# Coluna de Cards #}
+  <div class="col-lg-8">
+    <div class="row g-4">
       {% if savings %}
-        <ul class="list-unstyled">
-          {% for s in savings %}
-            <li class="d-flex justify-content-between align-items-start mb-2">
-              <div>
-                <strong>{{ s.name }}</strong><br>
-                <small class="text-muted">{{ s.bank or '—' }} {% if s.bank_code %}({{ s.bank_code }}){% endif %}</small>
-              </div>
+        {% for s in savings %}
+        <div class="col-md-6 col-xl-6 stagger-{{ loop.index % 3 + 1 }}">
+          <div class="dashboard-card p-4 virtual-bank-card hover-glow">
+            <div class="d-flex justify-content-between align-items-start mb-4">
+              <div class="bank-chip"></div>
               <div class="text-end">
-                <div><span class="currency-value">R$ {{ '{:,.2f}'.format(s.balance|default(0)).replace(',','.') }}</span></div>
-                <div class="small text-muted">CDI: {{ s.cdi_rate if s.cdi_rate is not none else '—' }}%</div>
+                <span class="badge rounded-pill bg-primary border-0 small opacity-75">CDI {{ s.cdi_rate if s.cdi_rate is not none else '0' }}%</span>
               </div>
-            </li>
-          {% endfor %}
-        </ul>
+            </div>
+            
+            <div class="mb-4 pt-2">
+                <h6 class="text-uppercase smaller tracking-widest text-secondary mb-1">Saldo Atual</h6>
+                <h3 class="fw-bold mb-0 currency-value" style="font-family: 'Outfit';">R$ {{ '{:,.2f}'.format(s.balance|default(0)).replace(',','.') }}</h3>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-end">
+              <div>
+                <h5 class="mb-0 fw-bold">{{ s.name }}</h5>
+                <small class="text-muted opacity-75">{{ s.bank or 'Instituição Digital' }}</small>
+              </div>
+              <div class="bank-code-pnl">
+                <small class="text-secondary small">{{ s.bank_code if s.bank_code else '001' }}</small>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
       {% else %}
-        <div class="text-muted">Nenhum cofrinho cadastrado.</div>
+        <div class="col-12 text-center py-5">
+            <div class="opacity-25 mb-3"><i class="bi bi-safe fs-1"></i></div>
+            <p class="text-muted">Nenhum cofrinho cadastrado ainda.<br>Adicione o primeiro para começar a poupar.</p>
+        </div>
       {% endif %}
     </div>
   </div>
 </div>
 
-<div class="row mt-3">
+<div class="row">
   <div class="col-12">
-    <div class="dashboard-card p-3">
-      <h6 class="card-subtitle mb-3">Ações</h6>
-      <p class="text-muted">Para atualizar automaticamente a taxa CDI, defina a variável de ambiente <code>CDI_API_URL</code> (ex.: URL de um endpoint que retorne a taxa para o banco). Se configurado, use o botão <em>Atualizar taxa</em>.</p>
-      {% if savings %}
-        <form method="post" action="{{ url_for('savings.update_rates') }}">
-          <button class="btn btn-outline-primary btn-sm">Atualizar taxa (auto)</button>
-        </form>
-      {% endif %}
+    <div class="dashboard-card p-4 border-0" style="background: rgba(255,255,255,0.02)">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+            <div>
+                <h6 class="fw-bold mb-1">Rendimento Automático</h6>
+                <p class="text-muted small mb-0">Seus cofrinhos podem render automaticamente via CDI se uma API for configurada.</p>
+            </div>
+            {% if savings %}
+            <form method="post" action="{{ url_for('savings.update_rates') }}">
+                <button class="btn btn-outline-primary rounded-pill px-4 fw-semibold">
+                    <i class="bi bi-arrow-clockwise me-2"></i>Atualizar Taxas CDI
+                </button>
+            </form>
+            {% endif %}
+        </div>
     </div>
   </div>
 </div>

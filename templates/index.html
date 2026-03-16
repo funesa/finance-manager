@@ -2,23 +2,23 @@
 {% set active_page = "transactions" %}
 
 {% block content %}
-<div class="row g-3 mb-4">
+<div class="row g-3 mb-4 stagger-1">
   <div class="col-md-4">
-    <div class="dashboard-card p-3 border-0 shadow-sm summary-positive">
+    <div class="dashboard-card p-3 border-0 shadow-sm summary-positive hover-glow">
       <h6 class="text-uppercase small fw-bold text-success opacity-75 mb-1">Total Receitas (Filtro)</h6>
       <h3 class="fw-bold text-success mb-0">R$ {{ '{:.2f}'.format(income) }}</h3>
       <small class="text-muted">Previsto: R$ {{ '{:.2f}'.format(total_income) }}</small>
     </div>
   </div>
   <div class="col-md-4">
-    <div class="dashboard-card p-3 border-0 shadow-sm summary-negative">
+    <div class="dashboard-card p-3 border-0 shadow-sm summary-negative hover-glow">
       <h6 class="text-uppercase small fw-bold text-danger opacity-75 mb-1">Total Despesas (Filtro)</h6>
       <h3 class="fw-bold text-danger mb-0">R$ {{ '{:.2f}'.format(expense) }}</h3>
       <small class="text-muted">Previsto: R$ {{ '{:.2f}'.format(total_expense) }}</small>
     </div>
   </div>
   <div class="col-md-4">
-    <div class="dashboard-card p-3 border-0 shadow-sm {{ 'summary-neutral' if bal >= 0 else 'summary-negative' }}">
+    <div class="dashboard-card p-3 border-0 shadow-sm {{ 'summary-neutral' if bal >= 0 else 'summary-negative' }} hover-glow">
       <h6 class="text-uppercase small fw-bold text-primary opacity-75 mb-1">Saldo (Filtro)</h6>
       <h3 class="fw-bold {{ 'text-primary' if bal >= 0 else 'text-danger' }} mb-0">R$ {{ '{:.2f}'.format(bal) }}</h3>
       <small class="text-muted">Previsto: R$ {{ '{:.2f}'.format(total_bal) }}</small>
@@ -27,7 +27,7 @@
 </div>
 
 <!-- Navegação de Mês -->
-<div class="card mb-4 border-0" style="background: rgba(255,255,255,0.03);">
+<div class="card mb-4 border-0 stagger-2" style="background: rgba(255,255,255,0.03);">
   <div class="card-body d-flex flex-column flex-md-row justify-content-between align-items-center py-3 gap-3">
     <div class="d-flex align-items-center gap-3">
       <a href="{{ url_for('transactions.index', month=prev_month) }}"
@@ -51,7 +51,7 @@
   </div>
 </div>
 
-<div class="card shadow-sm">
+<div class="card shadow-sm stagger-3">
   <div class="card-body">
 
     <div class="d-flex flex-column flex-md-row justify-content-md-between align-items-md-center mb-4 gap-3">

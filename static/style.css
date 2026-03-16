@@ -1,33 +1,32 @@
 /* --- 1. TEMA MODERN PREMIUM (Deep Universe) --- */
 :root {
   /* FUNDOS (Paleta Profunda & Vibrante) */
-  --primary-bg: #070a13;
-  /* Espaço profundo */
-  --secondary-bg: rgba(23, 28, 41, 0.7);
-  /* Vidro fosco sutil */
-  --glass-bg: rgba(255, 255, 255, 0.03);
+  --primary-bg: #05070a;
+  /* Ainda mais profundo */
+  --secondary-bg: rgba(17, 24, 39, 0.7);
+  /* Slate 900 com transparência */
+  --glass-bg: rgba(255, 255, 255, 0.035);
   --border-color: rgba(255, 255, 255, 0.08);
-  --card-hover: rgba(255, 255, 255, 0.05);
-  --glass-blur: blur(12px);
+  --card-hover: rgba(255, 255, 255, 0.06);
+  --glass-blur: blur(16px);
+  /* Blur mais forte para sensação premium */
 
   /* ACENTO (Gradients & Glows) */
-  --accent-color: #4f46e5;
-  /* Indigo moderno */
+  --accent-color: #6366f1;
   --accent-color-light: #818cf8;
   --accent-gradient: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  --accent-glow: 0 0 20px rgba(99, 102, 241, 0.3);
 
   /* Cores de Texto */
   --text-primary: #f8fafc;
-  /* Slate 50 */
   --text-secondary: #94a3b8;
-  /* Slate 400 */
   --text-muted: #64748b;
-  /* Slate 500 */
 
   /* SOMBRAS (Profundidade Camada) */
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-premium: 0 20px 40px rgba(0, 0, 0, 0.4);
 
   /* Fonte */
   --font-family-sans-serif: 'Outfit', 'Inter', system-ui, -apple-system, sans-serif;
@@ -434,9 +433,24 @@ body {
   }
 }
 
-.content-wrapper>* {
-  animation: fade-in-blur 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+@keyframes slide-in-right {
+  0% { transform: translateX(20px); opacity: 0; }
+  100% { transform: translateX(0); opacity: 1; }
 }
+
+@keyframes pulse-soft {
+  0% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(99, 102, 241, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
+}
+
+.content-wrapper > * {
+  animation: fade-in-blur 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.stagger-1 { animation-delay: 0.1s; }
+.stagger-2 { animation-delay: 0.2s; }
+.stagger-3 { animation-delay: 0.3s; }
 
 /* Alertas Glass */
 .alert {
@@ -546,12 +560,24 @@ body {
 
 .fab-button:active { transform: scale(0.9) rotate(5deg); }
 
+.hover-glow:hover {
+  border-color: rgba(99, 102, 241, 0.4) !important;
+  box-shadow: 0 0 20px rgba(99, 102, 241, 0.15) !important;
+}
+
 .toggle-btn-round {
   border-radius: 50%; 
   width: 40px; 
   height: 40px; 
   background: rgba(255,255,255,0.05); 
   border: 1px solid var(--border-color);
+  transition: all 0.2s ease;
+}
+
+.toggle-btn-round:hover {
+  background: rgba(255,255,255,0.1);
+  border-color: var(--accent-color-light);
+  transform: rotate(15deg);
 }
 
 .header-profile {

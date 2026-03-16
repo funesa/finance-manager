@@ -40,78 +40,72 @@
         <form method="post" id="budgetForm">
             <input type="hidden" name="month" value="{{ current_month }}">
 
-            <div class="budget-list-wrapper">
+            <div class="row g-4 budget-grid mt-2">
                 {% for item in budget_data %}
-                <div class="row g-3 align-items-center budget-item-row">
-                    <div class="col-md-3">
-                        <label class="form-label"><strong>{{ item.category_name }}</strong></label>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="input-group">
-                            <span class="input-group-text">R$</span>
-                            <input type="text" name="budget_{{ item.category_id }}" class="form-control money-input"
-                                        value="{{ '{:,.2f}'.format(item.budgeted|default(0)).replace(',', '.') if (item.budgeted|default(0)) > 0 else '' }}"
-                                         placeholder="0,00"
-                                         data-previous="{{ '{:,.2f}'.format(item.budgeted|default(0)).replace(',', '.') if (item.budgeted|default(0)) > 0 else '' }}">
+                <div class="col-12 col-md-6 col-lg-4">
+                    <div class="dashboard-card p-4 h-100 hover-glow">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div>
+                                <h6 class="text-uppercase small fw-bold text-secondary mb-1">Categoria</h6>
+                                <h5 class="fw-bold mb-0" style="font-family: 'Outfit';">{{ item.category_name }}</h5>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-link text-danger p-0 delete-budget-btn"
+                                            data-category-id="{{ item.category_id }}" data-month="{{ current_month }}" title="Remover orçamento">
+                                <i class="bi bi-x-circle fs-5"></i>
+                            </button>
                         </div>
-                    </div>
-                    <div class="col-md-6">
+
+                        <div class="mb-4">
+                            <label class="form-label small text-muted">Meta Mensal</label>
+                            <div class="input-group input-group-sm mb-3">
+                                <span class="input-group-text bg-transparent border-end-0">R$</span>
+                                <input type="text" name="budget_{{ item.category_id }}" class="form-control money-input bg-transparent border-start-0 ps-0"
+                                            value="{{ '{:,.2f}'.format(item.budgeted|default(0)).replace(',', '.') if (item.budgeted|default(0)) > 0 else '' }}"
+                                             placeholder="0,00"
+                                             data-previous="{{ '{:,.2f}'.format(item.budgeted|default(0)).replace(',', '.') if (item.budgeted|default(0)) > 0 else '' }}">
+                            </div>
+                        </div>
+
                         {% set spent = item.spent %}
                         {% set budgeted = item.budgeted if item.budgeted > 0 else 1 %}
                         {% set percentage = (spent / budgeted * 100) if budgeted > 0 else 0 %}
+                        
+                        <div class="mt-auto">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="smaller text-muted">Gasto: <strong class="text-white">R$ {{ '{:,.2f}'.format(spent|default(0)).replace(',', '.') }}</strong></span>
+                                <span class="smaller text-muted">Restante: <strong class="{{ 'text-danger' if spent > item.budgeted else 'text-success' }}">
+                                    R$ {{ '{:,.2f}'.format((item.budgeted - spent)|abs).replace(',', '.') }}
+                                </strong></span>
+                            </div>
 
-                        <div class="d-flex justify-content-between mb-1">
-                            <small>Gasto: R$ {{ '{:,.2f}'.format(spent|default(0)).replace(',', '.') }}</small>
-                            <small>Orçado: R$ {{ '{:,.2f}'.format(item.budgeted|default(0)).replace(',', '.') }}</small>
+                            {% if item.budgeted > 0 %}
+                                {% set p_color = 'primary' %}
+                                {% if percentage > 85 %}{% set p_color = 'warning' %}{% endif %}
+                                {% if percentage > 100 %}{% set p_color = 'danger' %}{% endif %}
+                                {% set percentage_display = 100 if percentage > 100 else percentage %}
+
+                                <div class="progress mb-2" style="height: 8px; background: rgba(255,255,255,0.05);">
+                                    <div class="progress-bar bg-{{ p_color }} shadow-sm" role="progressbar" 
+                                         style="width:{{ '{:.0f}'.format(percentage_display) }}%; border-radius: 4px;">
+                                    </div>
+                                </div>
+                                <div class="text-end smaller fw-bold {{ 'text-' + p_color }}">{{ '{:.0f}'.format(percentage) }}%</div>
+                            {% else %}
+                                <div class="alert py-2 px-3 mb-0 smaller text-muted text-center" style="background: rgba(255,255,255,0.02);">
+                                    Sem orçamento definido
+                                </div>
+                            {% endif %}
                         </div>
-
-                        {% if item.budgeted > 0 %}
-                            {% set p_color = 'success' %}
-                            {% if percentage > 75 %}{% set p_color = 'warning' %}{% endif %}
-                            {% if percentage > 100 %}{% set p_color = 'danger' %}{% endif %}
-                            {% set percentage_display = 100 if percentage > 100 else percentage %}
-
-                            <div class="d-flex align-items-center gap-2">
-                                <div class="flex-grow-1">
-                                    <div class="progress" style="height: 20px;">
-                                        <div class="progress-bar bg-{{ p_color }}" role="progressbar" aria-valuenow="{{ percentage }}"
-                                                 aria-valuemin="0" aria-valuemax="100" style="width:{{ '{:.0f}'.format(percentage_display) }}%">
-                                            {{ '{:.0f}'.format(percentage) }}%
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <button type="button" class="btn btn-sm btn-outline-danger delete-budget-btn"
-                                                    data-category-id="{{ item.category_id }}" data-month="{{ current_month }}" title="Remover orçamento">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        {% else %}
-                            <div class="d-flex align-items-center gap-2">
-                                <div class="flex-grow-1">
-                                    <div class="progress" style="height: 20px;">
-                                        <div class="progress-bar bg-light text-dark" role="progressbar" style="width: 100%">
-                                            <small>Gasto R$ {{ '{:,.2f}'.format(spent|default(0)).replace(',', '.') }} (Sem orçamento)</small>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div>
-                                    <button type="button" class="btn btn-sm btn-outline-danger delete-budget-btn"
-                                            data-category-id="{{ item.category_id }}" data-month="{{ current_month }}" title="Remover orçamento">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        {% endif %}
                     </div>
                 </div>
                 {% endfor %}
             </div>
 
-            <hr>
-            <button type="submit" class="btn btn-primary"><i class="bi bi-save"></i> Salvar Orçamentos</button>
+            <div class="mt-5 text-center">
+                <button type="submit" class="btn btn-primary px-5 py-3 rounded-pill fw-bold">
+                    <i class="bi bi-save2-fill me-2"></i> Salvar Todos os Orçamentos
+                </button>
+            </div>
         </form>
 
         <script>
