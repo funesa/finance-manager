@@ -159,7 +159,6 @@ def delete_budget_route():
         return redirect(url_for('.index', month=month))
 
 # Função que o __init__.py irá chamar
-def configure_budgets(app):
-    app.register_blueprint(budgets_bp)
+# O Blueprint 'budgets_bp' já está definido acima.
 
 # --- CORREÇÃO: Removido o '}' extra que causava erro de sintaxe ---

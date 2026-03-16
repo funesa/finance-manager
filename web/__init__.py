@@ -2,69 +2,66 @@
 Main Flask application entry point.
 """
 import os
-from flask import Flask, redirect, url_for
-from flask_login import LoginManager
+import time
 from datetime import datetime
-import time 
+from flask import Flask
+from flask_login import LoginManager
+from dotenv import load_dotenv
 
 # --- IMPORTAÇÕES DAS ROTAS ---
-from routes.auth import configure_auth
-from routes.dashboard import configure_dashboard
-from routes.savings import configure_savings
-from routes.budgets import configure_budgets
-from routes.salary import configure_salary
-from routes.transactions import configure_transactions
-from routes.receivables import configure_receivables
+from routes.auth import auth_bp
+from routes.dashboard import dashboard_bp
+from routes.savings import savings_bp
+from routes.budgets import budgets_bp
+from routes.salary import salary_bp
+from routes.transactions import transactions_bp
+from routes.receivables import receivables_bp
 
 def create_app():
     """Factory function to create and configure Flask app."""
     
-    # --- INÍCIO DA CORREÇÃO (CAMINHO ABSOLUTO) ---
+    # Carrega variáveis de ambiente do arquivo .env
+    load_dotenv()
     
-    # 1. Descobre o caminho para a pasta 'web' (onde este arquivo está)
-    # Ex: C:\Users\POFJunior\Desktop\FinancialManager (2)\web
+    # Configuração de diretórios
     WEB_DIR = os.path.abspath(os.path.dirname(__file__))
-    
-    # 2. Descobre o caminho para a PASTA RAIZ (um nível acima da 'web')
-    # Ex: C:\Users\POFJunior\Desktop\FinancialManager (2)
     ROOT_DIR = os.path.dirname(WEB_DIR)
-    
-    # 3. Descobre o caminho para a pasta 'static' (que está na raiz)
-    # Ex: C:\Users\POFJunior\Desktop\FinancialManager (2)\static
     STATIC_DIR = os.path.join(ROOT_DIR, 'static')
     
-    # 4. Cria o app Flask dizendo EXATAMENTE onde a pasta 'static' está
-    #    e qual é a pasta raiz do projeto.
     app = Flask(__name__, root_path=ROOT_DIR, static_folder=STATIC_DIR)
     
-    # --- FIM DA CORREÇÃO ---
-    
-    # Configuração básica
+    # Configuração básica via variáveis de ambiente
     app.config['SECRET_KEY'] = os.environ.get("SECRET_KEY", "fallback-default-key-for-development")
+    app.config['ENV'] = os.environ.get("FLASK_ENV", "production")
     
     # Configuração do Login Manager
     login_manager = LoginManager()
+    login_manager.init_app(app)
     login_manager.login_view = 'auth.login'
     login_manager.login_message = 'Por favor, faça login para acessar esta página.'
     login_manager.login_message_category = 'info'
     
-    # Injeta a variável 'datetime' em todos os templates
-    @app.context_processor
-    def inject_datetime():
-        return {'datetime': datetime}
+    # Configuração do user_loader no próprio app (ou pode ser movido para auth)
+    import database as db
+    @login_manager.user_loader
+    def load_user(user_id):
+        return db.get_user_by_id(int(user_id))
     
-    # Injeta o 'cache_buster' para forçar o navegador a recarregar o CSS
+    # Injeta variáveis globais nos templates
     @app.context_processor
-    def inject_cache_buster():
-        return {'cache_buster': int(time.time())}
+    def inject_globals():
+        return {
+            'datetime': datetime,
+            'cache_buster': int(time.time())
+        }
     
-    # --- REGISTRO DOS BLUEPRINTS/ROTAS ---
-    configure_auth(app, login_manager)
-    configure_dashboard(app)
-    configure_savings(app)
-    configure_budgets(app)
-    configure_salary(app)
-    configure_transactions(app)
-    configure_receivables(app)
+    # --- REGISTRO DOS BLUEPRINTS ---
+    app.register_blueprint(auth_bp)
+    app.register_blueprint(dashboard_bp)
+    app.register_blueprint(savings_bp)
+    app.register_blueprint(budgets_bp)
+    app.register_blueprint(salary_bp)
+    app.register_blueprint(transactions_bp)
+    app.register_blueprint(receivables_bp)
     
     return app

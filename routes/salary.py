@@ -1,18 +1,9 @@
-# src/web/routes/salary.py
-from flask import (
-    Blueprint, render_template, request, flash
-)
+from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_required, current_user
 from datetime import datetime
-
-# --- CORREÇÃO: Import absoluto (sem '...') ---
 import database as db
 
-# Crie o Blueprint
-salary_bp = Blueprint('salary', 
-                      __name__, 
-                      template_folder='../templates')
-
+salary_bp = Blueprint('salary', __name__)
 
 @salary_bp.route("/salary", methods=["GET", "POST"])
 @login_required
@@ -37,7 +28,3 @@ def index():
         active_page="salary",
         datetime=datetime
     )
-
-# Função que o __init__.py irá chamar
-def configure_salary(app):
-    app.register_blueprint(salary_bp)
