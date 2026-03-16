@@ -31,6 +31,8 @@ def index():
         next_month_display = (target_date + relativedelta(months=1)).strftime('%b/%Y').capitalize()
 
         recurring_rules = db.get_recurring_receivables_by_user(current_user.id)
+        
+        # --- Cálculo Mês Atual (e atrasados) ---
         paid_in_target_month_ids = db.get_paid_recurring_ids_for_month(current_user.id, target_month_str)
         pending_recurring_list = [rule for rule in recurring_rules if rule['id'] not in paid_in_target_month_ids]
         
@@ -40,10 +42,22 @@ def index():
         total_pending_target_month = sum(float(rule.get('amount', 0)) for rule in pending_recurring_list)
         for row in pending_manual:
             try:
-                val = float(row['amount'])
-                if row['date'] <= target_month_str + "-31": total_pending_target_month += val
+                # Se a conta é de antes ou do próprio mês alvo, soma no total pendente
+                if row['date'][:7] <= target_month_str:
+                    total_pending_target_month += float(row['amount'])
             except: continue
         
+        # --- Cálculo Mês Seguinte ---
+        # No mês seguinte, as recorrentes estarão todas pendentes (em teoria)
+        total_pending_next_month = sum(float(rule.get('amount', 0)) for rule in recurring_rules)
+        # Mais as manuais que já estão marcadas para o mês seguinte (ou além)
+        next_month_iso = (target_date + relativedelta(months=1)).strftime('%Y-%m')
+        for row in pending_manual:
+            try:
+                if row['date'][:7] == next_month_iso:
+                    total_pending_next_month += float(row['amount'])
+            except: continue
+
         total_pending_all_time = sum(float(row['amount']) for row in pending_manual)
         total_pending_all_time += sum(float(rule.get('amount', 0)) for rule in pending_recurring_list)
 
@@ -53,6 +67,7 @@ def index():
                                all_recurring_rules=recurring_rules,
                                paid_history=paid_history,
                                total_pending_this_month=total_pending_target_month,
+                               total_pending_next_month=total_pending_next_month,
                                total_pending_all_time=total_pending_all_time,
                                target_month_display=target_month_display,
                                target_month_str=target_month_str,
