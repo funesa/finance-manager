@@ -274,12 +274,12 @@
             <tbody>
               {% for rule in recurring_rules %}
               <tr>
-                <td>{{ rule[1] }}</td>
-                <td>R$ {{ "{:.2f}".format(rule[2]) }}</td>
-                <td>{{ rule[3] }}</td>
-                <td>{{ rule[4] }}</td>
+                <td>{{ rule.description }}</td>
+                <td>R$ {{ "{:.2f}".format(rule.amount) }}</td>
+                <td>{{ rule.day_of_month }}</td>
+                <td>{{ rule.category }}</td>
                 <td>
-                  <form action="{{ url_for('transactions.delete_recurrence', rule_id=rule[0]) }}" method="POST">
+                  <form action="{{ url_for('transactions.delete_recurrence', rule_id=rule.id) }}" method="POST">
                     <button type="submit" class="btn btn-link py-0 text-danger"><i class="bi bi-x-circle"></i></button>
                   </form>
                 </td>
