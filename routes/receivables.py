@@ -13,8 +13,6 @@ receivables_bp = Blueprint('receivables', __name__)
 
 @receivables_bp.route("/receivables")
 @login_required
-@receivables_bp.route("/receivables")
-@login_required
 def index():
     """Página principal de Contas a Receber."""
     

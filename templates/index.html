@@ -6,23 +6,23 @@
   <div class="col-md-4">
     <div class="dashboard-card p-3 border-0 shadow-sm" style="background: rgba(34, 197, 94, 0.1);">
       <h6 class="text-uppercase small fw-bold text-success opacity-75 mb-1">Total Receitas (Filtro)</h6>
-      <h3 class="fw-bold text-success mb-0">R$ {{ '%.2f'|format(income) }}</h3>
-      <small class="text-muted">Previsto: R$ {{ '%.2f'|format(total_income) }}</small>
+      <h3 class="fw-bold text-success mb-0">R$ {{ '{:.2f}'.format(income) }}</h3>
+      <small class="text-muted">Previsto: R$ {{ '{:.2f}'.format(total_income) }}</small>
     </div>
   </div>
   <div class="col-md-4">
     <div class="dashboard-card p-3 border-0 shadow-sm" style="background: rgba(239, 68, 68, 0.1);">
       <h6 class="text-uppercase small fw-bold text-danger opacity-75 mb-1">Total Despesas (Filtro)</h6>
-      <h3 class="fw-bold text-danger mb-0">R$ {{ '%.2f'|format(expense) }}</h3>
-      <small class="text-muted">Previsto: R$ {{ '%.2f'|format(total_expense) }}</small>
+      <h3 class="fw-bold text-danger mb-0">R$ {{ '{:.2f}'.format(expense) }}</h3>
+      <small class="text-muted">Previsto: R$ {{ '{:.2f}'.format(total_expense) }}</small>
     </div>
   </div>
   <div class="col-md-4">
     <div class="dashboard-card p-3 border-0 shadow-sm"
       style="background: rgba({{ '96, 165, 250, 0.1' if bal >= 0 else '239, 68, 68, 0.1' }});">
       <h6 class="text-uppercase small fw-bold text-primary opacity-75 mb-1">Saldo (Filtro)</h6>
-      <h3 class="fw-bold {{ 'text-primary' if bal >= 0 else 'text-danger' }} mb-0">R$ {{ '%.2f'|format(bal) }}</h3>
-      <small class="text-muted">Previsto: R$ {{ '%.2f'|format(total_bal) }}</small>
+      <h3 class="fw-bold {{ 'text-primary' if bal >= 0 else 'text-danger' }} mb-0">R$ {{ '{:.2f}'.format(bal) }}</h3>
+      <small class="text-muted">Previsto: R$ {{ '{:.2f}'.format(total_bal) }}</small>
     </div>
   </div>
 </div>
@@ -143,7 +143,7 @@
               {% endif %}
             </td>
             <td data-label="Categoria">{{ r.category }}</td>
-            <td data-label="Valor"><span class="currency-value">R$ {{ '%.2f'|format(r.amount) }}</span></td>
+            <td data-label="Valor"><span class="currency-value">R$ {{ '{:.2f}'.format(r.amount) }}</span></td>
 
             <td data-label="Tipo">
               <span class="badge {{ 'text-bg-success' if r.type == 'income' else 'text-bg-danger' }}">
@@ -276,7 +276,7 @@
               {% for rule in recurring_rules %}
               <tr>
                 <td>{{ rule[1] }}</td>
-                <td>R$ {{ "%.2f"|format(rule[2]) }}</td>
+                <td>R$ {{ "{:.2f}".format(rule[2]) }}</td>
                 <td>{{ rule[3] }}</td>
                 <td>{{ rule[4] }}</td>
                 <td>

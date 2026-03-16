@@ -164,25 +164,22 @@ def init_db():
         """)
 
         # --- INÍCIO DA CORREÇÃO (MIGRAÇÃO) ---
-        # Tenta adicionar a nova coluna 'recurring_id' na tabela 'receivables'
-        try:
-            cur.execute("ALTER TABLE receivables ADD COLUMN recurring_id INTEGER REFERENCES recurring_receivables(id)")
-        except sqlite3.OperationalError:
-            pass
-
-        # Migração Transações: status, recurring_id, created_at
-        try:
-            cur.execute("ALTER TABLE transactions ADD COLUMN status TEXT NOT NULL DEFAULT 'paid'")
-        except sqlite3.OperationalError:
-            pass
-        try:
-            cur.execute("ALTER TABLE transactions ADD COLUMN recurring_id INTEGER")
-        except sqlite3.OperationalError:
-            pass
-        try:
-            cur.execute("ALTER TABLE transactions ADD COLUMN created_at TEXT DEFAULT CURRENT_TIMESTAMP")
-        except sqlite3.OperationalError:
-            pass
+        migrations = [
+            ("receivables", "ALTER TABLE receivables ADD COLUMN recurring_id INTEGER REFERENCES recurring_receivables(id)"),
+            ("transactions", "ALTER TABLE transactions ADD COLUMN status TEXT NOT NULL DEFAULT 'paid'"),
+            ("transactions", "ALTER TABLE transactions ADD COLUMN recurring_id INTEGER"),
+            ("transactions", "ALTER TABLE transactions ADD COLUMN created_at TEXT DEFAULT CURRENT_TIMESTAMP")
+        ]
+        
+        for table, sql in migrations:
+            try:
+                cur.execute(sql)
+                print(f"Sucesso ao aplicar migração na tabela {table}: {sql}")
+            except sqlite3.OperationalError as e:
+                if "duplicate column name" in str(e).lower() or "already exists" in str(e).lower():
+                    pass
+                else:
+                    print(f"Erro ao aplicar migração na tabela {table}: {e}")
         # --- FIM DA CORREÇÃO (MIGRAÇÃO) ---
 
         conn.commit()
@@ -259,7 +256,19 @@ def get_category_id(name, user_id):
 def fetch_transactions(user_id, filter_category=None, date_from=None, date_to=None, search=None, limit=None, offset=None, status=None):
     """Busca transações de um usuário com filtros, pesquisa e paginação."""
     q = """
-        SELECT t.id, t.date, t.description, c.name as category, t.amount, t.type, t.note, t.status, t.recurring_id, t.created_at
+        SELECT t.id, t.date, t.description, c.name as category, t.amount, t.type, t.note, t.status, t.recurring_id
+    """
+    # Defensive check for created_at (it might be missing in production)
+    with get_conn() as conn:
+        cur = conn.cursor()
+        cur.execute("PRAGMA table_info(transactions)")
+        columns = [col[1] for col in cur.fetchall()]
+        if "created_at" in columns:
+            q += ", t.created_at"
+        else:
+            q += ", 'N/A' as created_at"
+
+    q += """
         FROM transactions t
         LEFT JOIN categories c ON t.category_id = c.id
         WHERE t.user_id = ?
